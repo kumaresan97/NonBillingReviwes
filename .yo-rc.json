@@ -1,0 +1,16 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "version": "1.14.0",
+    "libraryName": "non-billing-reviews",
+    "libraryId": "deca1e06-f3af-4c16-99f6-5618818d1b45",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "NonBillingReviews",
+    "solutionShortDescription": "NonBillingReviews description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}

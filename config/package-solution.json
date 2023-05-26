@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "non-billing-reviews-client-side-solution",
+    "id": "deca1e06-f3af-4c16-99f6-5618818d1b45",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.14.0"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "NonBillingReviews description"
+      },
+      "longDescription": {
+        "default": "NonBillingReviews description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "non-billing-reviews Feature",
+        "description": "The feature that activates elements of the non-billing-reviews solution.",
+        "id": "c5b0c1d6-1b5b-40cf-9e29-5cc9cc2a17b0",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/non-billing-reviews.sppkg"
+  }
+}
