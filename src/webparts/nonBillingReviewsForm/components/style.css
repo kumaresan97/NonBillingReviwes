@@ -23,7 +23,7 @@
 .ms-Button,
 .ms-Dropdown-title {
   border-radius: 10px;
-} */
+}  */
 
 /* .ms-Dropdown-item {
   min-height: 25px;
@@ -35,7 +35,7 @@
 
 #spLeftNav {
   width: 165px;
-}
+} */
 
 .ms-Button--primary {
   border: 1px solid rgb(0, 120, 212);
@@ -62,8 +62,11 @@
   background-color: rgb(243, 242, 241);
   color: rgb(210, 208, 206);
 }
+.Total{
+  border: 1px solid #000 !important;
+}
 
-@media print {
+/* @media print {
   .ms-Button {
     display: none;
   }
@@ -71,4 +74,4 @@
   .ms-TextField-fieldGroup textarea {
     height: 290px;
   }
-} */
+}  */

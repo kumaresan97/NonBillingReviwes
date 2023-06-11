@@ -6,45 +6,216 @@ import {
   PeoplePicker,
   PrincipalType,
 } from "@pnp/spfx-controls-react/lib/PeoplePicker";
+import * as moment from "moment";
 import {
   Checkbox,
   DatePicker,
+  DefaultButton,
   Dropdown,
   IDropdownOption,
   IDropdownStyles,
   ITextFieldStyles,
+  IconButton,
   Label,
   PrimaryButton,
+  Stack,
   TextField,
 } from "@fluentui/react";
+import { log } from "@pnp/pnpjs";
+import TechnicalSkill from "./TechnicalSkill";
+import { locales } from "moment";
 
 interface IForm {
+  Status: string;
   staffName: number;
   title: string;
   sbu: string;
   reviewer1: number;
+  reviewer1Email: string;
   reviewer1Level: string;
   reviewer2: number;
+  reviewer2Email: string;
   reviewer2Level: string;
   isValid: boolean;
+  SDstaffComments: string;
+  TLstaffComments: string;
+  TSstaffComments: string;
+  OverallstaffComments: string;
+  GoalsstaffComments: string;
+  isSubmit1: boolean;
+  isSubmit2: boolean;
+  isSubmit3: boolean;
+
+  isSubmitDisabled: boolean;
+
+  isEdit: boolean;
+  TechnicalSkillName: string;
+  TechnicalSkillRating: string;
+  masterSelectedTechnicalName: ITechnicalName[];
+  modifiedSelectedTechnicalName: ITechnicalName[];
+  C101PRR: string;
+  C101ARR: string;
+  C102PRR: string;
+  C102ARR: string;
+
+  C103PRR: string;
+  C103ARR: string;
+
+  C104PRR: string;
+  C104ARR: string;
+
+  C105PRR: string;
+  C105ARR: string;
+
+  C106PRR: string;
+  C106ARR: string;
+
+  C207PRR: string;
+  C207ARR: string;
+
+  C208PRR: string;
+  C208ARR: string;
+
+  C209PRR: string;
+  C209ARR: string;
+
+  C210PRR: string;
+  C210ARR: string;
+
+  C211PRR: string;
+  C211ARR: string;
+
+  C1PRComments: string;
+  C1ARComments: string;
+
+  C2PRComments: string;
+  C2ARComments: string;
+  TechnicalSkillPRComments: string;
+  TechnicalSkillARComments: string;
+  AdditionalPRComments: string;
+  AdditionalARComments: string;
+  OverallPRComments: string;
+  OverallARComments: string;
+  GoalsPRComments: string;
+  GoalsARComments: string;
+  C1ARTotal: number;
+  C1PRTotal: number;
+  C2PRTotal: number;
+  C2ARTotal: number;
+  GoalsARDate: any;
+  GoalsPRDate: any;
+  OverallTSRating: string;
+  TSRating1: string;
+  OverallPRRating: number;
+  OverallARRating: number;
+  CalculatedTsRating: number;
+  OverallTsRating2: string;
+  CalculatedOverallTs2: number;
+  GoalsHistory: string;
+  AwardOverallRating: string;
 }
 
+interface ITechnicalName {
+  TechinicalSkillName: string;
+  TechnicalSkillRating: string;
+  TSRating1: string;
+}
+interface IChoice {
+  key: string;
+  text: string;
+  disabled: boolean;
+}
+let TSOptions: IChoice[] = [];
 const MainComponent = (props) => {
-  const [currentUser, setCurrentUser] = useState({
-    id: null,
-    email: "",
-  });
-
-  const [reviewFormData, setReviewFormData] = useState<IForm>({
+  let revData: IForm = {
+    Status: "",
     staffName: null,
     title: "",
     sbu: "",
     reviewer1: null,
+    reviewer1Email: "",
     reviewer1Level: "",
     reviewer2: null,
+    reviewer2Email: "",
     reviewer2Level: "",
     isValid: false,
+    SDstaffComments: "",
+    TLstaffComments: "",
+    TSstaffComments: "",
+    OverallstaffComments: "",
+    GoalsstaffComments: "",
+    isSubmit1: false,
+    isSubmit2: false,
+    isSubmit3: false,
+
+    isSubmitDisabled: false,
+
+    isEdit: false,
+    TechnicalSkillName: "",
+    TechnicalSkillRating: "",
+    TSRating1: "",
+    masterSelectedTechnicalName: [],
+    modifiedSelectedTechnicalName: [],
+    C101PRR: "",
+    C101ARR: "",
+
+    C102PRR: "",
+    C102ARR: "",
+    C103PRR: "",
+    C103ARR: "",
+    C104PRR: "",
+    C104ARR: "",
+    C105PRR: "",
+    C105ARR: "",
+    C106PRR: "",
+    C106ARR: "",
+    C207PRR: "",
+    C207ARR: "",
+    C208PRR: "",
+    C208ARR: "",
+    C209PRR: "",
+    C209ARR: "",
+    C210PRR: "",
+    C210ARR: "",
+    C211PRR: "",
+    C211ARR: "",
+    C2PRComments: "",
+    C2ARComments: "",
+    C1PRComments: "",
+    C1ARComments: "",
+    OverallARRating: 0,
+    OverallPRRating: 0,
+    CalculatedTsRating: 0,
+    CalculatedOverallTs2: 0,
+
+    TechnicalSkillPRComments: "",
+    TechnicalSkillARComments: "",
+    AdditionalPRComments: "",
+    AdditionalARComments: "",
+    OverallPRComments: "",
+    OverallARComments: "",
+    GoalsPRComments: "",
+    GoalsARComments: "",
+    C1ARTotal: null,
+    C1PRTotal: null,
+    C2PRTotal: null,
+    C2ARTotal: null,
+    GoalsPRDate: "",
+    GoalsARDate: "",
+    OverallTSRating: "",
+    OverallTsRating2: "",
+    GoalsHistory: "",
+    AwardOverallRating: "",
+  };
+  const [currentUser, setCurrentUser] = useState({
+    id: null,
+    email: "",
   });
+  const [ddData, setddData] = useState([]);
+
+  const [reviewFormData, setReviewFormData] = useState<IForm>(revData);
+  const [isReviewIDAvail, setIsReviewIDAvail] = useState(false);
+  const [currentuserId, setCurrentUserId] = useState(0);
   const jobTitleOptions: IDropdownOption[] = [
     { key: "Managing Director", text: "Managing Director" },
     { key: "Senior Director", text: "Senior Director" },
@@ -58,7 +229,7 @@ const MainComponent = (props) => {
   ];
 
   const Ratingoptions: IDropdownOption[] = [
-    { key: "NA", text: "NA" },
+    { key: "", text: "" },
     { key: "5", text: "5" },
     { key: "4.5", text: "4.5" },
     { key: "4", text: "4" },
@@ -68,6 +239,12 @@ const MainComponent = (props) => {
     { key: "2", text: "2" },
     { key: "1.5", text: "1.5" },
     { key: "1", text: "1" },
+  ];
+  const TechnicalSkilloption: IDropdownOption[] = [
+    { key: "Java", text: "Java" },
+    { key: "Reactjs", text: "Reactjs" },
+    { key: "javascript", text: "javascript" },
+    { key: "Nextjs", text: "Nextjs" },
   ];
 
   const sbuOptions: IDropdownOption[] = [
@@ -111,6 +288,8 @@ const MainComponent = (props) => {
   const boxTextField1 = {
     root: {
       textarea: {
+        width: "100%",
+
         height: 80,
         resize: "none",
       },
@@ -128,10 +307,9 @@ const MainComponent = (props) => {
     root: {
       width: "100%",
       display: "flex",
-      justifyContent: "center",
     },
     dropdown: {
-      width: "50%",
+      width: "30%",
     },
   };
   const TechnicalskillText = {
@@ -139,6 +317,13 @@ const MainComponent = (props) => {
       width: "100%",
     },
   };
+  const Datepickerstyle = {
+    root: {
+      width: 200,
+    },
+  };
+
+  // getonchange values
   const onChange = (key: string, value: any): void => {
     let _reviewFormData: IForm = { ...reviewFormData };
 
@@ -153,27 +338,399 @@ const MainComponent = (props) => {
       _reviewFormData.reviewer2 != null &&
       _reviewFormData.reviewer2Level != "";
 
-    console.log(_reviewFormData);
+    if (reviewFormData.Status == "Awaiting Reviewee") {
+      _reviewFormData.isSubmitDisabled =
+        _reviewFormData.SDstaffComments == "" ||
+        _reviewFormData.GoalsstaffComments == "" ||
+        _reviewFormData.OverallstaffComments == "" ||
+        _reviewFormData.TLstaffComments == "" ||
+        _reviewFormData.TSstaffComments == "";
+    }
 
+    if (reviewFormData.Status == "Awaiting Primary Reviewer") {
+      _reviewFormData.isSubmitDisabled =
+        _reviewFormData.C1PRComments == "" ||
+        _reviewFormData.C2PRComments == "" ||
+        _reviewFormData.TechnicalSkillPRComments == "" ||
+        _reviewFormData.AdditionalPRComments == "" ||
+        _reviewFormData.GoalsPRComments == "";
+    }
+
+    if (reviewFormData.Status == "Awaiting Additional Reviewer") {
+      _reviewFormData.isSubmitDisabled =
+        _reviewFormData.C1ARComments == "" ||
+        _reviewFormData.C2ARComments == "" ||
+        _reviewFormData.TechnicalSkillARComments == "" ||
+        _reviewFormData.AdditionalARComments == "" ||
+        _reviewFormData.GoalsARComments == "";
+    }
+
+    _reviewFormData.isSubmitDisabled =
+      submitButtonDisableHandler(_reviewFormData);
+
+    _reviewFormData.C1PRTotal = C1PRTotals([
+      _reviewFormData.C101PRR,
+      _reviewFormData.C102PRR,
+      _reviewFormData.C103PRR,
+      _reviewFormData.C104PRR,
+      _reviewFormData.C105PRR,
+      _reviewFormData.C106PRR,
+    ]);
+
+    _reviewFormData.C2PRTotal = C1PRTotals([
+      _reviewFormData.C207PRR,
+      _reviewFormData.C208PRR,
+      _reviewFormData.C209PRR,
+      _reviewFormData.C210PRR,
+      _reviewFormData.C211PRR,
+    ]);
+
+    _reviewFormData.C1ARTotal = C1PRTotals([
+      _reviewFormData.C101ARR,
+      _reviewFormData.C102ARR,
+      _reviewFormData.C103ARR,
+      _reviewFormData.C104ARR,
+      _reviewFormData.C105ARR,
+
+      _reviewFormData.C106ARR,
+    ]);
+
+    _reviewFormData.C2ARTotal = C1PRTotals([
+      _reviewFormData.C207ARR,
+      _reviewFormData.C208ARR,
+      _reviewFormData.C209ARR,
+      _reviewFormData.C210ARR,
+      _reviewFormData.C211ARR,
+    ]);
+
+    _reviewFormData.OverallPRRating = C1PRTotals([
+      _reviewFormData.C1PRTotal,
+      _reviewFormData.C2PRTotal,
+      _reviewFormData.CalculatedTsRating,
+    ]);
+    _reviewFormData.OverallARRating = C1PRTotals([
+      _reviewFormData.C1ARTotal,
+      _reviewFormData.C2ARTotal,
+      _reviewFormData.CalculatedOverallTs2,
+    ]);
     setReviewFormData({ ..._reviewFormData });
   };
-  const getCurrentUser = () => {
-    const CurrentUser = props.context.pageContext.user.email;
-    props.sp.web.currentUser().then((e) => {
-      let data = reviewFormData;
-      if (e) {
-        data.staffName = e.Id;
-        setCurrentUser({ id: e.Id, email: e.Email });
-        setReviewFormData({ ...data });
-      }
-    });
+
+  // get TechnicalSkillSEction onchange
+
+  const onChangeTechnicalName = (key, index, value, objKey) => {
+    let _reviewFormData: IForm = { ...reviewFormData };
+    _reviewFormData[key][index][objKey] = value;
+
+    setReviewFormData({ ..._reviewFormData });
+    AddTechnicalTotal(reviewFormData.modifiedSelectedTechnicalName);
   };
 
-  const onStartReview = async () => {
-    debugger;
+  // Rating Calculations
+
+  const C1PRTotals = (value) => {
+    let result: number | null;
+    let total: number = 0;
+    let count: number = 0;
+
+    // let ratings: string[] = [];
+    // ratings.push(value.C101PRR);
+    // ratings.push(value.C102PRR);
+    // ratings.push(value.C103PRR);
+    // ratings.push(value.C104PRR);
+    // ratings.push(value.C105PRR);
+    // ratings.push(value.C106PRR);
+
+    value.map((rating, index) => {
+      if (rating != "") {
+        total += parseFloat(rating);
+        count++;
+      }
+    });
+    if (count != 0) {
+      result = parseFloat((total / count).toFixed(2));
+    } else {
+      result = null;
+    }
+    return result;
+  };
+
+  // technicalskill  total
+  const AddTechnicalTotal = (value) => {
+    let result: number | null;
+    let result1: number | null;
+    let total: number = 0;
+    let total1: number = 0;
+    let count: number = 0;
+    let count1: number = 0;
+
+    // let ratings: string[] = [];
+    // ratings.push(value.C101PRR);
+    // ratings.push(value.C102PRR);
+    // ratings.push(value.C103PRR);
+    // ratings.push(value.C104PRR);
+    // ratings.push(value.C105PRR);
+    // ratings.push(value.C106PRR);
+
+    value.map((rating, index) => {
+      if (rating["TechnicalSkillRating"]) {
+        if (rating["TechnicalSkillRating"] != "") {
+          total += parseFloat(rating["TechnicalSkillRating"]);
+          count++;
+        }
+      }
+      if (rating["TSRating1"]) {
+        if (rating["TSRating1"] != "") {
+          total1 += parseFloat(rating["TSRating1"]);
+          count1++;
+        }
+      }
+    });
+    if (count != 0) {
+      result = parseFloat((total / count).toFixed(2));
+    } else {
+      result = null;
+    }
+    if (count != 0) {
+      result1 = parseFloat((total1 / count1).toFixed(2));
+    } else {
+      result1 = null;
+    }
+    console.log(result, result1);
+    reviewFormData.CalculatedTsRating = result;
+    reviewFormData.CalculatedOverallTs2 = result1;
+    setReviewFormData({ ...reviewFormData });
+
+    return [result, result1];
+  };
+
+  // reviewFormData.CalculatedTsRating = total;
+  // setReviewFormData({ ...reviewFormData });
+  //get options from list
+  const TechnicalskillOptions = () => {
+    TSOptions = [];
     props.sp.web.lists
-      .getByTitle("NonBillingReviews")
+      .getByTitle("DI Categories")
+      .items.get()
+      .then((i) => {
+        i.forEach((x) => {
+          if (x.Category == "Technical Skill") {
+            TSOptions.push({
+              key: x.Title,
+              text: x.Title,
+              disabled: false,
+            });
+          }
+        });
+        // console.log(TSOptions);
+        setddData([...TSOptions]);
+      })
+      .catch((err) => console.log(err));
+  };
+
+  // optionhide fro Dropdown
+
+  const DropdownHide = () => {
+    // if (Array.isArray(reviewFormData.masterSelectedTechnicalName) && reviewFormData.masterSelectedTechnicalName.some(condition)) {
+    //   // Your code here
+    // }
+
+    if (Array.isArray(reviewFormData.masterSelectedTechnicalName)) {
+      ddData.forEach((option) => {
+        const isOptionSelected =
+          reviewFormData.masterSelectedTechnicalName.some(
+            (opt) => opt["TechinicalSkillName"] === option.key
+          );
+        option.disabled = isOptionSelected;
+        setddData([...ddData]);
+      });
+    }
+  };
+
+  // get current user for peoplepickler
+
+  const getCurrentUser = () => {
+    const CurrentUser = props.context.pageContext.user.email;
+    props.sp.web
+      .currentUser()
+      .then((e) => {
+        let data = reviewFormData;
+        if (e) {
+          data.staffName = e.Id;
+          setCurrentUser({ id: e.Id, email: e.Email });
+          setReviewFormData({ ...data });
+        }
+        //get currentid user detail
+
+        // console.log("ID:", currentuserId);
+      })
+      .then(() => {
+        if (geturl()) {
+          {
+            props.sp.web.lists
+              .getByTitle("Non Billable Reviews")
+              .items.getById(geturl())
+              .select("*,Reviewer1Name/EMail,Reviewer2Name/EMail")
+              .expand("Reviewer1Name,Reviewer2Name")
+              .get()
+              .then((item) => {
+                console.log(item);
+
+                let statusReviewer: IForm = { ...reviewFormData };
+                statusReviewer.Status = item.Status ? item.Status : null;
+                statusReviewer.staffName = item.Staff_x0020_NameId
+                  ? item.Staff_x0020_NameId
+                  : null;
+                statusReviewer.sbu = item.SBU ? item.SBU : "";
+                statusReviewer.title = item.Staff_x0020_Job_x0020_Title
+                  ? item.Staff_x0020_Job_x0020_Title
+                  : "";
+                statusReviewer.reviewer1 = item.Reviewer1NameId
+                  ? item.Reviewer1NameId
+                  : null;
+                statusReviewer.reviewer1Email = item.Reviewer1NameId
+                  ? item.Reviewer1Name.EMail
+                  : "";
+                statusReviewer.reviewer1Level = item.Reviewer1Level
+                  ? item.Reviewer1Level
+                  : "";
+                statusReviewer.reviewer2 = item.Reviewer2NameId
+                  ? item.Reviewer2NameId
+                  : null;
+                statusReviewer.reviewer2Email = item.Reviewer2NameId
+                  ? item.Reviewer2Name.EMail
+                  : "";
+                statusReviewer.reviewer2Level = item.Reviewer2Level
+                  ? item.Reviewer2Level
+                  : "";
+                statusReviewer.SDstaffComments = item.SCStaffComments
+                  ? item.SCStaffComments
+                  : "";
+                statusReviewer.TLstaffComments = item.TLStaffComments
+                  ? item.TLStaffComments
+                  : "";
+                statusReviewer.TSstaffComments =
+                  item.Technical_x0020_Skills_x0020_Sta
+                    ? item.Technical_x0020_Skills_x0020_Sta
+                    : "";
+                statusReviewer.C1PRComments = item.C1PRComments
+                  ? item.C1PRComments
+                  : "";
+                statusReviewer.C2PRComments = item.C2PRComments
+                  ? item.C2PRComments
+                  : "";
+                statusReviewer.TechnicalSkillPRComments =
+                  item.TechnicalSkillPRComments
+                    ? item.TechnicalSkillPRComments
+                    : "";
+                statusReviewer.OverallstaffComments =
+                  item.Overall_x0020_Skills_x0020_Staff
+                    ? item.Overall_x0020_Skills_x0020_Staff
+                    : "";
+                statusReviewer.OverallPRComments = item.OverallPRComments
+                  ? item.OverallPRComments
+                  : "";
+                statusReviewer.GoalsstaffComments =
+                  item.Goals_x0020_Staff_x0020_Comment
+                    ? item.Goals_x0020_Staff_x0020_Comment
+                    : "";
+                statusReviewer.GoalsPRComments = item.GoalsPRComments
+                  ? item.GoalsPRComments
+                  : "";
+                statusReviewer.AdditionalPRComments = item.AdditionalPRComments
+                  ? item.AdditionalPRComments
+                  : "";
+                statusReviewer.masterSelectedTechnicalName =
+                  item.Technical_x0020_Skills
+                    ? JSON.parse(item.Technical_x0020_Skills)
+                    : "";
+                statusReviewer.C1ARComments = item.C1ARComments;
+                statusReviewer.C2ARComments = item.C2ARComments;
+                statusReviewer.TechnicalSkillARComments =
+                  item.TechnicalSkillARComments
+                    ? item.TechnicalSkillARComments
+                    : "";
+                statusReviewer.AdditionalARComments = item.AdditionalARComments
+                  ? item.AdditionalARComments
+                  : "";
+                statusReviewer.GoalsARComments = item.GoalsARComments
+                  ? item.GoalsARComments
+                  : "";
+                statusReviewer.C101PRR = item.C101PRR ? item.C101PRR : "";
+                statusReviewer.C101ARR = item.C101ARR ? item.C101ARR : "";
+                statusReviewer.C102PRR = item.C102PRR ? item.C102PRR : "";
+                statusReviewer.C102ARR = item.C102ARR ? item.C102ARR : "";
+                statusReviewer.C103PRR = item.C103PRR ? item.C103PRR : "";
+                statusReviewer.C103ARR = item.C103ARR ? item.C103ARR : "";
+                statusReviewer.C104PRR = item.C104PRR ? item.C104PRR : "";
+                statusReviewer.C104ARR = item.C104ARR ? item.C104ARR : "";
+                statusReviewer.C105PRR = item.C105PRR ? item.C105PRR : "";
+                statusReviewer.C105ARR = item.C105ARR ? item.C105ARR : "";
+                statusReviewer.C106PRR = item.C106PRR ? item.C106PRR : "";
+                statusReviewer.C106ARR = item.C106ARR ? item.C106ARR : "";
+                statusReviewer.C207PRR = item.C207PRR ? item.C207PRR : "";
+                statusReviewer.C207ARR = item.C207ARR ? item.C207ARR : "";
+                statusReviewer.C208PRR = item.C208PRR ? item.C208PRR : "";
+                statusReviewer.C208ARR = item.C208ARR ? item.C208ARR : "";
+                statusReviewer.C209PRR = item.C209PRR ? item.C209PRR : "";
+                statusReviewer.C209ARR = item.C209ARR ? item.C209ARR : "";
+                statusReviewer.C210PRR = item.C210PRR ? item.C210PRR : "";
+                statusReviewer.C210ARR = item.C210ARR ? item.C210ARR : "";
+                statusReviewer.C211PRR = item.C211PRR ? item.C211PRR : "";
+                statusReviewer.C211ARR = item.C211ARR ? item.C211ARR : "";
+                statusReviewer.C1PRTotal = item.C1PRTotal ? item.C1PRTotal : 0;
+                statusReviewer.C1ARTotal = item.C1ARTotal ? item.C1ARTotal : 0;
+                statusReviewer.C2PRTotal = item.C2PRTotal ? item.C2PRTotal : 0;
+                statusReviewer.C2ARTotal = item.C2ARTotal ? item.C2ARTotal : 0;
+                statusReviewer.OverallPRRating = item.OverallPRRating
+                  ? item.OverallPRRating
+                  : 0;
+                statusReviewer.OverallARRating = item.OverallARRating
+                  ? item.OverallARRating
+                  : 0;
+                statusReviewer.GoalsARDate = item.GoalsARDate
+                  ? new Date(item.GoalsARDate).toISOString()
+                  : null;
+                statusReviewer.GoalsPRDate = item.GoalsPRDate
+                  ? new Date(item.GoalsPRDate).toISOString()
+                  : null;
+                statusReviewer.OverallTSRating =
+                  item.Overall_x0020_Technical_x0020_Sk
+                    ? item.Overall_x0020_Technical_x0020_Sk
+                    : "";
+                statusReviewer.TSRating1 = item.TSRating1 ? item.TSRating1 : "";
+                statusReviewer.CalculatedTsRating =
+                  item.Calculated_x0020_Technical_x0020
+                    ? item.Calculated_x0020_Technical_x0020
+                    : 0;
+                statusReviewer.OverallTsRating2 = item.OverallTsRating2
+                  ? item.OverallTsRating2
+                  : "";
+                statusReviewer.CalculatedOverallTs2 = item.CalculatedOverallTs2
+                  ? item.CalculatedOverallTs2
+                  : 0;
+                statusReviewer.isSubmitDisabled =
+                  submitButtonDisableHandler(statusReviewer);
+                statusReviewer.GoalsHistory = item.History ? item.History : "";
+                statusReviewer.AwardOverallRating = item.AwardOverallRating
+                  ? item.AwardOverallRating
+                  : "";
+                console.log(statusReviewer, "statusReviewer");
+
+                setReviewFormData({ ...statusReviewer });
+              });
+            // console.log(reviewFormData);
+          }
+        }
+      })
+      .catch((e) => console.log(e));
+  };
+  // start feview onclick
+  const onStartReview = () => {
+    props.sp.web.lists
+      .getByTitle("Non Billable Reviews")
       .items.add({
+        Status: "Awaiting Reviewee",
         Staff_x0020_NameId: currentUser.id,
         Staff_x0020_Job_x0020_Title: reviewFormData.title,
         SBU: reviewFormData.sbu,
@@ -183,6 +740,7 @@ const MainComponent = (props) => {
         Reviewer2Level: reviewFormData.reviewer2Level,
       })
       .then((i) => {
+        window.location.href = getSharepointurl();
         console.log(i);
       })
       .catch((err) => {
@@ -190,8 +748,272 @@ const MainComponent = (props) => {
       });
   };
 
+  // TSOptions.forEach(option => {
+  //   if (reviewFormData.masterSelectedTechnicalName.some(opt => opt.key === option.key)) {
+  //     option.disabled = true;
+  //   } else {
+  //     option.disabled = false;
+  //   }
+  // });
+
+  // onsubmit when user click submit button
+  const OnSubmitFunction = (action: string) => {
+    if (action == "Submit") {
+      if (reviewFormData.Status == "Awaiting Reviewee") {
+        reviewFormData.Status = "Awaiting Primary Reviewer";
+        setReviewFormData({ ...reviewFormData });
+      } else if (reviewFormData.Status == "Awaiting Primary Reviewer") {
+        reviewFormData.Status = "Awaiting Additional Reviewer";
+        setReviewFormData({ ...reviewFormData });
+      } else if (reviewFormData.Status == "Awaiting Additional Reviewer") {
+        reviewFormData.Status = "Awaiting Acknowledgement";
+        setReviewFormData({ ...reviewFormData });
+      }
+    } else if (action == "Revert") {
+      if (reviewFormData.Status == "Awaiting Acknowledgement") {
+        reviewFormData.Status = "Awaiting Additional Reviewer";
+        setReviewFormData({ ...reviewFormData });
+      } else if (reviewFormData.Status == "Awaiting Additional Reviewer") {
+        reviewFormData.Status = "Awaiting Primary Reviewer";
+        setReviewFormData({ ...reviewFormData });
+      } else if (reviewFormData.Status == "Awaiting Primary Reviewer") {
+        reviewFormData.Status = "Awaiting Reviewee";
+        setReviewFormData({ ...reviewFormData });
+      }
+    }
+    props.sp.web.lists
+      .getByTitle("Non Billable Reviews")
+      .items.getById(geturl())
+      .update({
+        Status: reviewFormData.Status,
+        SCStaffComments: reviewFormData.SDstaffComments,
+        TLStaffComments: reviewFormData.TLstaffComments,
+        Goals_x0020_Staff_x0020_Comment: reviewFormData.GoalsstaffComments,
+        Technical_x0020_Skills_x0020_Sta: reviewFormData.TSstaffComments,
+        Overall_x0020_Skills_x0020_Staff: reviewFormData.OverallstaffComments,
+        Technical_x0020_Skills: JSON.stringify(
+          reviewFormData.masterSelectedTechnicalName
+        ),
+        C1PRComments: reviewFormData.C1PRComments,
+
+        C2PRComments: reviewFormData.C2PRComments,
+        TechnicalSkillPRComments: reviewFormData.TechnicalSkillPRComments,
+        AdditionalPRComments: reviewFormData.AdditionalPRComments,
+        GoalsPRComments: reviewFormData.GoalsPRComments,
+        C1ARComments: reviewFormData.C1ARComments,
+        C2ARComments: reviewFormData.C2ARComments,
+        TechnicalSkillARComments: reviewFormData.TechnicalSkillARComments,
+
+        AdditionalARComments: reviewFormData.AdditionalARComments,
+        GoalsARComments: reviewFormData.GoalsARComments,
+        GoalsPRDate: reviewFormData.GoalsPRDate
+          ? new Date(reviewFormData.GoalsPRDate).toISOString()
+          : null,
+        GoalsARDate: reviewFormData.GoalsARDate
+          ? new Date(reviewFormData.GoalsARDate).toISOString()
+          : null,
+
+        C101PRR: reviewFormData.C101PRR,
+        C101ARR: reviewFormData.C101ARR,
+        C102PRR: reviewFormData.C102PRR,
+        C102ARR: reviewFormData.C102ARR,
+        C103PRR: reviewFormData.C103PRR,
+        C103ARR: reviewFormData.C103ARR,
+        C104PRR: reviewFormData.C104PRR,
+        C104ARR: reviewFormData.C104ARR,
+        C105PRR: reviewFormData.C105PRR,
+        C105ARR: reviewFormData.C105ARR,
+        C106PRR: reviewFormData.C106PRR,
+        C106ARR: reviewFormData.C106ARR,
+        C207PRR: reviewFormData.C207PRR,
+        C207ARR: reviewFormData.C207ARR,
+        C208PRR: reviewFormData.C208PRR,
+        C208ARR: reviewFormData.C208ARR,
+        C209PRR: reviewFormData.C209PRR,
+        C209ARR: reviewFormData.C209ARR,
+        C210PRR: reviewFormData.C210PRR,
+        C210ARR: reviewFormData.C210ARR,
+        C211PRR: reviewFormData.C211PRR,
+        C211ARR: reviewFormData.C211ARR,
+        C1PRTotal: reviewFormData.C1PRTotal ? reviewFormData.C1PRTotal : 0,
+        C1ARTotal: reviewFormData.C1ARTotal ? reviewFormData.C1ARTotal : 0,
+        C2PRTotal: reviewFormData.C2PRTotal ? reviewFormData.C2PRTotal : 0,
+        C2ARTotal: reviewFormData.C2ARTotal ? reviewFormData.C2ARTotal : 0,
+        OverallARRating: reviewFormData.OverallARRating
+          ? reviewFormData.OverallARRating
+          : 0,
+        OverallPRRating: reviewFormData.OverallPRRating
+          ? reviewFormData.OverallPRRating
+          : 0,
+        Overall_x0020_Technical_x0020_Sk: reviewFormData.OverallTSRating,
+        OverallTsRating2: reviewFormData.OverallTsRating2,
+        Calculated_x0020_Technical_x0020: reviewFormData.CalculatedTsRating,
+        CalculatedOverallTs2: reviewFormData.CalculatedOverallTs2,
+        History: reviewFormData.GoalsHistory,
+        AwardOverallRating: reviewFormData.AwardOverallRating,
+      })
+      .then((i) => {
+        window.location.href = getSharepointurl();
+        console.log(i);
+        // i.array.forEach((element) => {
+        //   console.log(element);
+        //   if (element.Status == "Awaiting Reviewee") {
+        //     element.Status = "Awaiting PrimaryReviewer";
+        //   }
+        // });
+        // console.log(i);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  // const sum = () => {
+  //   let total = 0;
+
+  //   reviewFormData.masterSelectedTechnicalName.forEach((x) => {
+  //     let value = parseFloat(x.TechnicalSkillRating);
+  //     if (!isNaN(value)) {
+  //       total += value;
+  //     }
+  //   });
+
+  //   let total1 = 0;
+  //   reviewFormData.masterSelectedTechnicalName.forEach((x) => {
+  //     let value = parseFloat(x.TSRating1);
+  //     if (!isNaN(value)) {
+  //       total1 += value;
+  //     }
+  //   });
+
+  //   reviewFormData.CalculatedTsRating = total;
+  //   reviewFormData.CalculatedOverallTs2 = total1;
+  //   setReviewFormData({ ...reviewFormData });
+  // };
+  //  let total = 0;
+
+  // reviewFormData.masterSelectedTechnicalName.forEach((x) => {
+  //   let value = parseFloat(x.TechnicalSkillRating);
+  //   if (!isNaN(value)) {
+  //     total += value;
+  // /   }
+  // });
+
+  // let total1 = 0;
+  // reviewFormData.masterSelectedTechnicalName.forEach((x) => {
+  //   let value = parseFloat(x.TSRating1);
+  //   if (!isNaN(value)) {
+  //     total1 += value;
+  //   }
+  // });
+
+  // reviewFormData.CalculatedTsRating = total;
+  // reviewFormData.CalculatedOverallTs2 = total1;
+  // setReviewFormData({ ...reviewFormData });
+
+  // getid from url
+
+  const geturl = () => {
+    const url = new URL(window.location.href);
+
+    const searchParams = new URLSearchParams(url.search);
+
+    const Id = searchParams.get("ReviewItem");
+
+    setCurrentUserId(parseInt(Id));
+
+    if (Id) {
+      setIsReviewIDAvail(true);
+    } else {
+      setIsReviewIDAvail(false);
+    }
+    // console.log(reviewFormData);
+    return Id ? parseInt(Id) : null;
+  };
+  const getSharepointurl = () => {
+    const listName = "NonBillableReviews";
+
+    const listUrl = `${props.context.pageContext.web.absoluteUrl}/Lists/${listName}`;
+
+    return listUrl;
+  };
+
+  //AddTechnical Skill
+  const addTechnicalSkill = () => {
+    // reviewFormData.SelectedTechnicalName = [];
+    if (!Array.isArray(reviewFormData.masterSelectedTechnicalName)) {
+      reviewFormData.masterSelectedTechnicalName = [];
+    }
+    reviewFormData.masterSelectedTechnicalName.push({
+      TechinicalSkillName: reviewFormData.TechnicalSkillName,
+      TechnicalSkillRating: reviewFormData.TechnicalSkillRating,
+      TSRating1: reviewFormData.TSRating1,
+    });
+    reviewFormData.modifiedSelectedTechnicalName.push({
+      TechinicalSkillName: reviewFormData.TechnicalSkillName,
+      TechnicalSkillRating: reviewFormData.TechnicalSkillRating,
+      TSRating1: reviewFormData.TSRating1,
+    });
+
+    AddTechnicalTotal(reviewFormData.masterSelectedTechnicalName);
+    DropdownHide();
+    reviewFormData.TechnicalSkillName = "";
+    // reviewFormData.TechnicalSkillRating = null;
+    // reviewFormData.TSRating1 = null;
+
+    setReviewFormData({ ...reviewFormData });
+
+    console.log(reviewFormData.masterSelectedTechnicalName);
+  };
+
+  const deleteTechnicallSkillName = (index) => {
+    console.log(index);
+
+    const updatedData = { ...reviewFormData };
+    updatedData.masterSelectedTechnicalName.splice(index, 1);
+    setReviewFormData({ ...updatedData }); // Update the s
+    DropdownHide();
+    AddTechnicalTotal(reviewFormData.masterSelectedTechnicalName);
+  };
+
+  const submitButtonDisableHandler = (_reviewFormData): boolean => {
+    if (_reviewFormData.Status == "Awaiting Reviewee") {
+      return (
+        _reviewFormData.SDstaffComments == "" ||
+        _reviewFormData.GoalsstaffComments == "" ||
+        _reviewFormData.OverallstaffComments == "" ||
+        _reviewFormData.TLstaffComments == "" ||
+        _reviewFormData.TSstaffComments == ""
+      );
+    }
+
+    if (_reviewFormData.Status == "Awaiting Primary Reviewer") {
+      return (
+        _reviewFormData.C1PRComments == "" ||
+        _reviewFormData.C2PRComments == "" ||
+        _reviewFormData.TechnicalSkillPRComments == "" ||
+        _reviewFormData.AdditionalPRComments == "" ||
+        _reviewFormData.GoalsPRComments == ""
+      );
+    }
+
+    if (_reviewFormData.Status == "Awaiting Additional Reviewer") {
+      return (
+        _reviewFormData.C1ARComments == "" ||
+        _reviewFormData.C2ARComments == "" ||
+        _reviewFormData.TechnicalSkillARComments == "" ||
+        _reviewFormData.AdditionalARComments == "" ||
+        _reviewFormData.GoalsARComments == ""
+      );
+    }
+  };
+  // const init = () => {
+  //   getCurrentUser();
+  // };
   React.useEffect(() => {
     getCurrentUser();
+    // init();
+    TechnicalskillOptions();
   }, []);
 
   return (
@@ -213,7 +1035,7 @@ const MainComponent = (props) => {
               <PeoplePicker
                 context={props.context}
                 personSelectionLimit={1}
-                groupName={""} // Leave this blank in case you want to filter from all users
+                groupName={""}
                 showtooltip={true}
                 // required={true}
                 disabled={true}
@@ -235,6 +1057,7 @@ const MainComponent = (props) => {
                 placeholder="Select Job Title"
                 options={jobTitleOptions}
                 selectedKey={reviewFormData.title}
+                disabled={isReviewIDAvail}
                 onChange={(e, choice) => {
                   onChange("title", choice.key);
                 }}
@@ -251,6 +1074,7 @@ const MainComponent = (props) => {
                 options={sbuOptions}
                 placeholder="Select SBU"
                 selectedKey={reviewFormData.sbu}
+                disabled={isReviewIDAvail}
                 onChange={(e, choice) => {
                   onChange("sbu", choice.key);
                 }}
@@ -276,11 +1100,11 @@ const MainComponent = (props) => {
           <div className={styles.col25left}>
             <TextField></TextField>
           </div>
-        </div> */}
+          </div> */}
 
           <div className={styles.row}>
             <div className={styles.col25Right}>
-              <Label>Reviewer 1 Name:</Label>
+              <Label> Primary Reviewer</Label>
             </div>
             <div className={styles.col25left}>
               <PeoplePicker
@@ -290,11 +1114,11 @@ const MainComponent = (props) => {
                 showtooltip={true}
                 // required={true}
                 ensureUser={true}
-                showHiddenInUI={false}
+                // showHiddenInUI={false}
+                showHiddenInUI={true}
+                disabled={isReviewIDAvail}
                 principalTypes={[PrincipalType.User]}
-                // defaultSelectedUsers={[
-                //   this.state.ReviewDetails.BasicDetails.Reviewer.Email,
-                // ]}
+                defaultSelectedUsers={[reviewFormData.reviewer1Email]}
                 resolveDelay={1000}
                 selectedItems={(e: any) => {
                   onChange("reviewer1", e.length > 0 ? e[0].id : null);
@@ -302,13 +1126,14 @@ const MainComponent = (props) => {
               />
             </div>
             <div className={styles.col25Right}>
-              <Label>Reviewer 1 Level:</Label>
+              <Label>Primary Reviewer Level:</Label>
             </div>
             <div className={styles.col25left}>
               <Dropdown
                 placeholder="Select Job Title"
                 options={jobTitleOptions}
                 selectedKey={reviewFormData.reviewer1Level}
+                disabled={isReviewIDAvail}
                 onChange={(e, choice) => {
                   onChange("reviewer1Level", choice.key);
                 }}
@@ -317,7 +1142,7 @@ const MainComponent = (props) => {
           </div>
           <div className={styles.row}>
             <div className={styles.col25Right}>
-              <Label>Reviewer2 Name:</Label>
+              <Label>Additional Reviewer</Label>
             </div>
             <div className={styles.col25left}>
               <PeoplePicker
@@ -328,10 +1153,12 @@ const MainComponent = (props) => {
                 // required={true}
                 ensureUser={true}
                 showHiddenInUI={false}
+                disabled={isReviewIDAvail}
                 principalTypes={[PrincipalType.User]}
                 // defaultSelectedUsers={[
                 //   this.state.ReviewDetails.BasicDetails.Reviewer.Email,
                 // ]}
+                defaultSelectedUsers={[reviewFormData.reviewer2Email]}
                 selectedItems={(e: any) => {
                   onChange("reviewer2", e.length > 0 ? e[0].id : null);
                 }}
@@ -339,13 +1166,14 @@ const MainComponent = (props) => {
               />
             </div>
             <div className={styles.col25Right}>
-              <Label>Reviewer2 Level:</Label>
+              <Label>Additional Reviewer Level:</Label>
             </div>
             <div className={styles.col25left}>
               <Dropdown
                 placeholder="Select Job Title"
                 options={jobTitleOptions}
                 selectedKey={reviewFormData.reviewer2Level}
+                disabled={isReviewIDAvail}
                 onChange={(e, choice) => {
                   onChange("reviewer2Level", choice.key);
                 }}
@@ -362,752 +1190,1730 @@ const MainComponent = (props) => {
           </div>
 
           {/* button section */}
-
-          <div className={styles.row}>
-            <div className={styles.col100}>
-              <div className={styles.row}>
-                <div className={styles.col100right}>
-                  <PrimaryButton
-                    text="Start Review"
-                    onClick={() => onStartReview()}
-                    disabled={!reviewFormData.isValid}
-                  ></PrimaryButton>
+          {!isReviewIDAvail && (
+            <div className={styles.row}>
+              <div className={styles.col100}>
+                <div className={styles.row}>
+                  <div className={styles.col100right}>
+                    <PrimaryButton
+                      text="Start Review"
+                      onClick={() => onStartReview()}
+                      disabled={!reviewFormData.isValid}
+                    ></PrimaryButton>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {isReviewIDAvail && (
+            <div className={styles.row}>
+              <div className={styles.col100right}>
+                <Label className={styles.reviewStatus}>
+                  Review Status:{reviewFormData.Status}
+                </Label>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* section 2   Performing Rating Scale*/}
-      <div className={styles.sectionContainer}>
-        <div className={styles.sectionHeader}>
-          <div className={styles.colHeader100}>
-            <span className={styles.subTitle}>Performing Rating Scale</span>
-          </div>
-        </div>
-        <div className={styles.sectionContent}>
-          <table className={styles.PerformingRatingScale}>
-            <tr>
-              <td className={styles.Firsrtd}>5</td>
-              <td className={styles.Secondtd}>Exceptional</td>
-            </tr>
-            <tr>
-              <td className={styles.Firsrtd}>4</td>
-              <td className={styles.Secondtd}>Exceeds Expectations</td>
-            </tr>
-            <tr>
-              <td className={styles.Firsrtd}>3</td>
-              <td className={styles.Secondtd}>Performs Well</td>
-            </tr>
-            <tr>
-              <td className={styles.Firsrtd}>2</td>
-              <td className={styles.Secondtd}>Needs Improvement</td>
-            </tr>
-            <tr>
-              <td className={styles.Firsrtd}>1</td>
-              <td className={styles.Secondtd}>Unsatisfactory</td>
-            </tr>
-          </table>
-        </div>
-      </div>
 
-      {/* //section 3  Category1 - Service Delivery */}
-
-      <div className={styles.sectionContainer}>
-        <div className={styles.sectionHeader}>
-          <div className={styles.colHeader100}>
-            <span className={styles.subTitle}>
-              A.Annual Review Performance Rating
-            </span>
-          </div>
-        </div>
-        <div className={styles.sectionHeader1}>
-          <div className={styles.colHeader100}>
-            <span className={styles.subTitle}>
-              Category1 - Service Delivery
-            </span>
-          </div>
-        </div>
-        <div className={styles.sectionContent}>
-          <div className={styles.innerTable}>
-            <div className={styles.box}>
-              <table className={styles.ServiceDelivery}>
-                <tr className={styles.rows}>
-                  <th className={styles.wideCell}>Metric</th>
-                  <th className={styles.wideCelltd}>
-                    Reviewer <br />1
-                  </th>
-                  <th className={styles.wideCelltd}>
-                    Reviewer <br />2
-                  </th>
-                </tr>
-                <tr className={styles.rows}>
-                  <td>1.Quality of work</td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    {/* <select>
-                      <option value="option1">Option 1</option>
-                      <option value="option2">Option 2</option>
-                      <option value="option3">Option 3</option>
-                    </select> */}
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-                <tr className={styles.rows}>
-                  <td>2.Effective Communication</td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    {/* <select>
-                      <option value="option1">Option 1</option>
-                      <option value="option2">Option 2</option>
-                      <option value="option3">Option 3</option>
-                    </select> */}
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    {/* <select>
-                      <option value="option1">Option 1</option>
-                      <option value="option2">Option 2</option>
-                      <option value="option3">Option 3</option>
-                    </select> */}
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-                <tr className={styles.rows}>
-                  <td>3.Decision making</td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    {/* <select>
-                      <option value="option1">Option 1</option>
-                      <option value="option2">Option 2</option>
-                      <option value="option3">Option 3</option>
-                    </select> */}
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    {/* <select>
-                      <option value="option1">Option 1</option>
-                      <option value="option2">Option 2</option>
-                      <option value="option3">Option 3</option>
-                    </select> */}
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-              </table>
-            </div>
-            <div className={styles.box}>
-              <table className={styles.ServiceDelivery}>
-                <tr className={styles.rows}>
-                  <th className={styles.wideCell}></th>
-                  <th className={styles.wideCelltd}>
-                    Reviewer <br />1
-                  </th>
-                  <th className={styles.wideCelltd}>
-                    Reviewer <br />2
-                  </th>
-                </tr>
-                <tr className={styles.rows}>
-                  <td>4.Responsiveness /Sence of urgency</td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    {/* <select>
-                      <option value="option1">Option 1</option>
-                      <option value="option2">Option 2</option>
-                      <option value="option3">Option 3</option>
-                    </select> */}
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-                <tr className={styles.rows}>
-                  <td>5.Result Orientation</td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-                <tr className={styles.rows}>
-                  <td>6.Project Adminstation</td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-              </table>
-            </div>
-          </div>
-          <div className={styles.innerTable}>
-            <div className={styles.box}>
-              {/* <h5>Staff Comments:</h5> */}
-              <TextField
-                multiline
-                styles={boxTextField}
-                label="Staff Comments"
-              ></TextField>
-            </div>
-            <div className={styles.box}>
-              {/* <h5>Staff Comments:</h5> */}
-              <TextField
-                styles={boxTextField1}
-                multiline
-                label="Reviewer 1 Comments:"
-              ></TextField>
-              {/* <h5>Staff Comments:</h5> */}
-              <TextField
-                styles={boxTextField1}
-                multiline
-                label="Reviewer 2 Comments:"
-              ></TextField>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* //section 4     Category2 - Teamwork and Leadership*/}
-
-      <div className={styles.sectionContainer}>
-        <div className={styles.sectionHeader1}>
-          <div className={styles.colHeader100}>
-            <span className={styles.subTitle}>
-              Category2 - Teamwork and Leadership
-            </span>
-          </div>
-        </div>
-        <div className={styles.sectionContent}>
-          <div className={styles.innerTable}>
-            <div className={styles.box}>
-              <table className={styles.ServiceDelivery}>
-                <tr className={styles.rows}>
-                  <th className={styles.wideCell}>Metric</th>
-                  <th className={styles.wideCelltd}>
-                    Reviewer <br />1
-                  </th>
-                  <th className={styles.wideCelltd}>
-                    Reviewer <br />2
-                  </th>
-                </tr>
-                <tr className={styles.rows}>
-                  <td>7.Adaptability</td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    {/* <select>
-                      <option value="option1">Option 1</option>
-                      <option value="option2">Option 2</option>
-                      <option value="option3">Option 3</option>
-                    </select> */}
-                    <Dropdown
-                      styles={dropDownStyles}
-                      options={jobTitleOptions}
-                    />
-                  </td>
-                </tr>
-                <tr className={styles.rows}>
-                  <td>8.Cultivates an Entrepreneurial Spirit</td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    {/* <select>
-                      <option value="option1">Option 1</option>
-                      <option value="option2">Option 2</option>
-                      <option value="option3">Option 3</option>
-                    </select> */}
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    {/* <select>
-                      <option value="option1">Option 1</option>
-                      <option value="option2">Option 2</option>
-                      <option value="option3">Option 3</option>
-                    </select> */}
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-                <tr className={styles.rows}>
-                  <td>9.Ethics and Values</td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-              </table>
-            </div>
-            <div className={styles.box}>
-              <table className={styles.ServiceDelivery}>
-                <tr className={styles.rows}>
-                  <th className={styles.wideCell}></th>
-                  <th className={styles.wideCelltd}>
-                    Reviewer <br />1
-                  </th>
-                  <th className={styles.wideCelltd}>
-                    Reviewer <br />2
-                  </th>
-                </tr>
-                <tr className={styles.rows}>
-                  <td>10.Teamwork/Collaboration</td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-                <tr className={styles.rows}>
-                  <td>11.Self-Development</td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-              </table>
-            </div>
-          </div>
-          <div className={styles.innerTable}>
-            <div className={styles.box}>
-              <TextField
-                multiline
-                styles={boxTextField}
-                label="Staff Comments"
-              ></TextField>
-            </div>
-            <div className={styles.box}>
-              <TextField
-                styles={boxTextField1}
-                multiline
-                label="Reviewer 1 Comments:"
-              ></TextField>
-
-              <TextField
-                styles={boxTextField1}
-                multiline
-                label="Reviewer 2 Comments:"
-              ></TextField>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* section 5  Category3 - TechnicalSkill */}
-
-      <div className={styles.sectionContainer}>
-        <div className={styles.sectionHeader1}>
-          <div className={styles.colHeader100}>
-            <span className={styles.subTitle}>Category3 - TechnicalSkill</span>
-          </div>
-        </div>
-        <div className={styles.sectionContent}>
-          <div className={styles.innerTable}>
-            <div className={styles.box}>
-              <table className={styles.ServiceDelivery}>
-                <tr className={styles.rows}>
-                  <th className={styles.wideCell}>Metric</th>
-                  <th className={styles.wideCelltd}>
-                    Reviewer <br />1
-                  </th>
-                  <th className={styles.wideCelltd}>
-                    Reviewer <br />2
-                  </th>
-                </tr>
-                <tr className={styles.rows}>
-                  <td className={styles.technicalskilltd}>
-                    <p>12</p> <TextField styles={TechnicalskillText} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-                <tr className={styles.rows}>
-                  <td className={styles.technicalskilltd}>
-                    <p>12a</p>
-                    <TextField styles={TechnicalskillText}></TextField>
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-              </table>
-            </div>
-            <div className={styles.box}>
-              <table className={styles.ServiceDelivery}>
-                <tr className={styles.rows}>
-                  <th className={styles.wideCell}></th>
-                  <th className={styles.wideCelltd}>
-                    Reviewer <br />1
-                  </th>
-                  <th className={styles.wideCelltd}>
-                    Reviewer <br />2
-                  </th>
-                </tr>
-                <tr className={styles.rows}>
-                  <td className={styles.technicalskilltd}>
-                    <p>12</p>
-                    <TextField styles={TechnicalskillText} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-                <tr className={styles.rows}>
-                  <td className={styles.technicalskilltd}>
-                    <p>12</p>
-                    <TextField styles={TechnicalskillText} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                  <td
-                    className={styles.wideCelltd}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Dropdown styles={dropDownStyles} options={Ratingoptions} />
-                  </td>
-                </tr>
-              </table>
-            </div>
-          </div>
-          <div className={styles.innerTable}>
-            <div className={styles.box}>
-              <TextField
-                multiline
-                styles={boxTextField}
-                label="Staff Comments"
-              ></TextField>
-            </div>
-            <div className={styles.box}>
-              <TextField
-                styles={boxTextField1}
-                multiline
-                label="Reviewer 1 Comments:"
-              ></TextField>
-
-              <TextField
-                styles={boxTextField1}
-                multiline
-                label="Reviewer 2 Comments:"
-              ></TextField>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* section 6  B.Additional/Overall comments */}
-      <div className={styles.sectionContainer}>
-        <div className={styles.sectionHeader}>
-          <div className={styles.colHeader100}>
-            <span className={styles.subTitle}>
-              B.Additional/Overall comments
-            </span>
-          </div>
-        </div>
-        <div className={styles.sectionHeader1}>
-          <div className={styles.colHeader100}>
-            <span className={styles.subTitle}>
-              {/* Category1 - Service Delivery */}
-            </span>
-          </div>
-        </div>
-        <div className={styles.sectionContent}>
-          <div className={styles.innerTable}>
-            <div className={styles.box}>
-              {/* <h5>Staff Comments:</h5> */}
-              <TextField
-                multiline
-                styles={boxTextField}
-                label="Staff Comments"
-              ></TextField>
-            </div>
-            <div className={styles.box}>
-              <TextField
-                styles={boxTextField1}
-                multiline
-                label="Reviewer 1 Comments:"
-              ></TextField>
-
-              <TextField
-                styles={boxTextField1}
-                multiline
-                label="Reviewer 2 Comments:"
-              ></TextField>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* section 7   C.Overall Annual Review Performance rating*/}
-      <div className={styles.sectionContainer}>
-        <div className={styles.sectionHeader}>
-          <div className={styles.colHeader100}>
-            <span className={styles.subTitle}>
-              C.Overall Annual Review Performance rating
-            </span>
-          </div>
-        </div>
-        <div className={styles.sectionHeader1}>
-          <div className={styles.colHeader100}>
-            <span className={styles.subTitle}>
-              {/* Category1 - Service Delivery */}
-            </span>
-          </div>
-        </div>
-        <div className={styles.sectionContent}>
-          <table>
-            <tr className={styles.rows}>
-              <th style={{ width: "30%" }}></th>
-              <th style={{ width: "20%" }}>Reviewer Evaluation</th>
-            </tr>
-            <tr>
-              <td>Overall Performance Rating</td>
-              <td>
-                <Dropdown options={Ratingoptions} styles={dropDownStyles} />
-              </td>
-            </tr>
-          </table>
-        </div>
-      </div>
-
-      {/* section 8  D.Goals and Training/Development Opportunities*/}
-
-      <div className={styles.sectionContainer}>
-        <div className={styles.sectionHeader}>
-          <div className={styles.colHeader100}>
-            <span className={styles.subTitle}>
-              D.goals Training/Development Opportunities
-            </span>
-          </div>
-        </div>
-        <div className={styles.sectionHeader1}>
-          <div className={styles.colHeader100}>
-            <span className={styles.subTitle}>
-              {/* Category1 - Service Delivery */}
-            </span>
-          </div>
-        </div>
-        <div className={styles.sectionContent}>
-          <div className={styles.innerTable}>
-            <div className={styles.box}>
-              <TextField
-                multiline
-                styles={boxTextField}
-                label="Staff Comments"
-              ></TextField>
-            </div>
-            <div className={styles.box}>
-              <TextField
-                styles={boxTextField1}
-                multiline
-                label="Reviewer 1 Comments:"
-              ></TextField>
-
-              <TextField
-                styles={boxTextField1}
-                multiline
-                label="Reviewer 2 Comments:"
-              ></TextField>
-            </div>
-          </div>
-          {/* //aknowledge */}
-          <div className={styles.row}>
-            <div className={styles.col25Right}>
-              <Label>
-                Acknowledgement / <br></br>Electronic Signature:
-              </Label>
-            </div>
-            <div className={styles.col25left}>
-              <PeoplePicker
-                context={props.context}
-                personSelectionLimit={1}
-                groupName={""} // Leave this blank in case you want to filter from all users
-                showtooltip={true}
-                // required={true}
-                ensureUser={true}
-                showHiddenInUI={false}
-                principalTypes={[PrincipalType.User]}
-                // defaultSelectedUsers={[
-                //   this.state.ReviewDetails.BasicDetails.Reviewer.Email,
-                // ]}
-                selectedItems={(e: any) => {
-                  onChange("reviewer2", e.length > 0 ? e[0].id : null);
-                }}
-                resolveDelay={1000}
-              />
-              <Label>Staff Reviewer:</Label>
-            </div>
-            <div className={styles.col25Right}></div>
-            <div className={styles.col25left}>
-              <PeoplePicker
-                context={props.context}
-                personSelectionLimit={1}
-                groupName={""} // Leave this blank in case you want to filter from all users
-                showtooltip={true}
-                // required={true}
-                ensureUser={true}
-                showHiddenInUI={false}
-                principalTypes={[PrincipalType.User]}
-                // defaultSelectedUsers={[
-                //   this.state.ReviewDetails.BasicDetails.Reviewer.Email,
-                // ]}
-                selectedItems={(e: any) => {
-                  onChange("reviewer2", e.length > 0 ? e[0].id : null);
-                }}
-                resolveDelay={1000}
-              />
-              <Label>Reviewer1:</Label>
-            </div>
-            <div className={styles.row}>
-              <div className={styles.col25Right}></div>
-              <div className={styles.col25left}>
-                <DatePicker />
-                <Label>Date</Label>
-              </div>
-              <div className={styles.col25Right}></div>
-              <div className={styles.col25left}>
-                <DatePicker />
-                <Label>Date</Label>
+      {isReviewIDAvail && (
+        <>
+          <div className={styles.sectionContainer}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.colHeader100}>
+                <span className={styles.subTitle}>Performing Rating Scale</span>
               </div>
             </div>
+            <div className={styles.sectionContent}>
+              <table className={styles.PerformingRatingScale}>
+                <tr>
+                  <td className={styles.Firsrtd}>5</td>
+                  <td className={styles.Secondtd}>Exceptional</td>
+                </tr>
+                <tr>
+                  <td className={styles.Firsrtd}>4</td>
+                  <td className={styles.Secondtd}>Exceeds Expectations</td>
+                </tr>
+                <tr>
+                  <td className={styles.Firsrtd}>3</td>
+                  <td className={styles.Secondtd}>Performs Well</td>
+                </tr>
+                <tr>
+                  <td className={styles.Firsrtd}>2</td>
+                  <td className={styles.Secondtd}>Needs Improvement</td>
+                </tr>
+                <tr>
+                  <td className={styles.Firsrtd}>1</td>
+                  <td className={styles.Secondtd}>Unsatisfactory</td>
+                </tr>
+              </table>
+            </div>
+          </div>
 
-            {/* // */}
-            <div className={styles.row}>
-              <div className={styles.col25Right}></div>
-              <div className={styles.col25left}></div>
-              <div className={styles.col25Right}></div>
-              <div className={styles.col25left}>
-                <PeoplePicker
-                  context={props.context}
-                  personSelectionLimit={1}
-                  groupName={""} // Leave this blank in case you want to filter from all users
-                  showtooltip={true}
-                  // required={true}
-                  ensureUser={true}
-                  showHiddenInUI={false}
-                  principalTypes={[PrincipalType.User]}
-                  // defaultSelectedUsers={[
-                  //   this.state.ReviewDetails.BasicDetails.Reviewer.Email,
-                  // ]}
-                  selectedItems={(e: any) => {
-                    onChange("reviewer2", e.length > 0 ? e[0].id : null);
+          {/* //section 3  Category1 - Service Delivery */}
+
+          <div className={styles.sectionContainer}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.colHeader100}>
+                <span className={styles.subTitle}>
+                  A.Annual Review Performance Rating
+                </span>
+              </div>
+            </div>
+            <div className={styles.sectionHeader1}>
+              <div className={styles.colHeader100}>
+                <span className={styles.subTitle}>
+                  Category1 - Service Delivery
+                </span>
+              </div>
+            </div>
+            <div className={styles.sectionContent}>
+              <table className={styles.ReviewTable} cellSpacing={0}>
+                <thead>
+                  <tr>
+                    <th className={styles.sNo}> </th>
+                    <th className={styles.Metric}>Metric</th>
+                    <th className={styles.PrimaryReviewer}>Primary Reviewer</th>
+                    <th className={styles.AdditionalReviewer}>
+                      Additional Reviewer
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1.</td>
+                    <td>Quality of Work</td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                        selectedKey={reviewFormData.C101PRR}
+                        onChange={(e, choice) => {
+                          onChange("C101PRR", choice.text);
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status ==
+                          "Awaiting Additional Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C101ARR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C101ARR}
+                      />
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>2.</td>
+                    <td>Effective Communication</td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C102PRR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C102PRR}
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status ==
+                          "Awaiting Additional Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C102ARR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C102ARR}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>3.</td>
+                    <td>Decision Making</td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C103PRR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C103PRR}
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status ==
+                          "Awaiting Additional Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C103ARR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C103ARR}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>4.</td>
+                    <td>Responsiveness/Sense of Urgency</td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C104PRR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C104PRR}
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status ==
+                          "Awaiting Additional Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C104ARR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C104ARR}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>5.</td>
+                    <td>Results Orientation</td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C105PRR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C105PRR}
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status ==
+                          "Awaiting Additional Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C105ARR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C105ARR}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>6.</td>
+                    <td>Project Administration</td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C106PRR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C106PRR}
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status ==
+                          "Awaiting Additional Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C106ARR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C106ARR}
+                      />
+                    </td>
+                  </tr>
+                  <tr className={styles.Total}>
+                    <td
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: 500,
+                        borderLeft: "thin solid #ddd",
+                        borderTop: "thin solid #ddd",
+                        borderBottom: "thin solid #ddd",
+                      }}
+                      colSpan={2}
+                    >
+                      Service Delivery Total
+                    </td>
+                    <td
+                      style={{
+                        // borderLeft: "thin solid",
+                        fontWeight: 500,
+                        paddingLeft: "25px",
+                        borderTop: "thin solid #ddd",
+                        borderBottom: "thin solid #ddd",
+                      }}
+                    >
+                      {reviewFormData.C1PRTotal ? reviewFormData.C1PRTotal : 0}
+                    </td>
+                    <td
+                      style={{
+                        fontWeight: 500,
+                        paddingLeft: "25px",
+
+                        borderRight: "thin solid #ddd",
+                        borderTop: "thin solid #ddd",
+                        borderBottom: "thin solid #ddd",
+                      }}
+                    >
+                      {reviewFormData.C1ARTotal ? reviewFormData.C1ARTotal : 0}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div className="" style={{ margin: "30px 0px" }}>
+                <div className={styles.commentbox}>
+                  <TextField
+                    multiline
+                    styles={boxTextField}
+                    label="Staff Comments"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Reviewee"
+                        ? false
+                        : true
+                    }
+                    onChange={(e, val) => {
+                      onChange("SDstaffComments", val);
+                    }}
+                    value={reviewFormData.SDstaffComments}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Primary Reviewer Comments:"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Primary Reviewer"
+                        ? false
+                        : true
+                    }
+                    value={reviewFormData.C1PRComments}
+                    onChange={(e, val) => {
+                      onChange("C1PRComments", val);
+                    }}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Additional Reviewer Comments:"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Additional Reviewer"
+                        ? false
+                        : true
+                    }
+                    value={reviewFormData.C1ARComments}
+                    onChange={(e, val) => {
+                      onChange("C1ARComments", val);
+                    }}
+                  ></TextField>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* //section 4     Category2 - Teamwork and Leadership*/}
+
+          <div className={styles.sectionContainer}>
+            <div className={styles.sectionHeader1}>
+              <div className={styles.colHeader100}>
+                <span className={styles.subTitle}>
+                  Category2 - Teamwork and Leadership
+                </span>
+              </div>
+            </div>
+            <div className={styles.sectionContent}>
+              {/* new design */}
+              <table className={styles.ReviewTable}>
+                <thead>
+                  <tr>
+                    <th className={styles.sNo}> </th>
+                    <th className={styles.Metric}>Metric</th>
+                    <th className={styles.PrimaryReviewer}>Primary Reviewer</th>
+                    <th className={styles.AdditionalReviewer}>
+                      Additional Reviewer
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>7.</td>
+                    <td>Adaptability</td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C207PRR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C207PRR}
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status ==
+                          "Awaiting Additional Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C207ARR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C207ARR}
+                      />
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>8.</td>
+                    <td>Cultivates an Entrepreneurial Spirit</td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C208PRR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C208PRR}
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status ==
+                          "Awaiting Additional Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C208ARR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C208ARR}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>9.</td>
+                    <td>Ethics and Values</td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C209PRR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C209PRR}
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status ==
+                          "Awaiting Additional Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C209ARR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C209ARR}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>10.</td>
+                    <td>Teamwork/Collaboration</td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C210PRR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C210PRR}
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status ==
+                          "Awaiting Additional Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C210ARR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C210ARR}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>11.</td>
+                    <td>Self-Development</td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                        onChange={(e, choice) => {
+                          onChange("C211PRR", choice.text);
+                        }}
+                        selectedKey={reviewFormData.C211PRR}
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status ==
+                          "Awaiting Additional Reviewer"
+                            ? false
+                            : true
+                        }
+                        selectedKey={reviewFormData.C211ARR}
+                        onChange={(e, choice) => {
+                          onChange("C211ARR", choice.text);
+                        }}
+                      />
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: 500,
+                        borderLeft: "thin solid #ddd",
+                        borderTop: "thin solid #ddd",
+                        borderBottom: "thin solid #ddd",
+                      }}
+                      colSpan={2}
+                    >
+                      Teamwork and Leadership Total
+                    </td>
+                    <td
+                      style={{
+                        // borderLeft: "thin solid",
+                        fontWeight: 500,
+                        paddingLeft: "25px",
+                        borderTop: "thin solid #ddd",
+                        borderBottom: "thin solid #ddd",
+                      }}
+                    >
+                      {reviewFormData.C2PRTotal ? reviewFormData.C2PRTotal : 0}
+                    </td>
+                    <td
+                      style={{
+                        fontWeight: 500,
+                        paddingLeft: "25px",
+
+                        borderRight: "thin solid #ddd",
+                        borderTop: "thin solid #ddd",
+                        borderBottom: "thin solid #ddd",
+                      }}
+                    >
+                      {reviewFormData.C2ARTotal ? reviewFormData.C2ARTotal : 0}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div className="" style={{ margin: "30px 0px" }}>
+                <div className={styles.commentbox}>
+                  <TextField
+                    multiline
+                    styles={boxTextField}
+                    label="Staff Comments"
+                    onChange={(e, val) => {
+                      onChange("TLstaffComments", val);
+                    }}
+                    disabled={
+                      reviewFormData.Status == "Awaiting Reviewee"
+                        ? false
+                        : true
+                    }
+                    value={reviewFormData.TLstaffComments}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Primary Reviewer Comments:"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Primary Reviewer"
+                        ? false
+                        : true
+                    }
+                    value={reviewFormData.C2PRComments}
+                    onChange={(e, val) => {
+                      onChange("C2PRComments", val);
+                    }}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Additional Reviewer Comments:"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Additional Reviewer"
+                        ? false
+                        : true
+                    }
+                    value={reviewFormData.C2ARComments}
+                    onChange={(e, val) => {
+                      onChange("C2ARComments", val);
+                    }}
+                  ></TextField>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* section 5  Category3 - TechnicalSkill */}
+
+          {/* <div className={styles.sectionContainer}>
+            <div className={styles.sectionHeader1}>
+              <div className={styles.colHeader100}>
+                <span className={styles.subTitle}>
+                  Category3 - TechnicalSkill
+                </span>
+              </div>
+            </div>
+            <div className={styles.sectionContent}>
+           
+
+           
+
+              <table className={styles.ReviewTable}>
+                <thead>
+                  <tr>
+                    <th className={styles.sNo}> </th>
+                    <th className={styles.Metric}>Metric</th>
+                    <th className={styles.PrimaryReviewer}>Primary Reviewer</th>
+                    <th className={styles.AdditionalReviewer}>
+                      Additional Reviewer
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>12a.</td>
+                    <td> Technical Skill Dynamic</td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Reviewee"
+                            ? true
+                            : false
+                        }
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Reviewee"
+                            ? true
+                            : false
+                        }
+                      />
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>12b.</td>
+                    <td></td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Reviewee"
+                            ? true
+                            : false
+                        }
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Reviewee"
+                            ? true
+                            : false
+                        }
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>12c.</td>
+                    <td></td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Reviewee"
+                            ? true
+                            : false
+                        }
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Reviewee"
+                            ? true
+                            : false
+                        }
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>12d.</td>
+                    <td></td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Reviewee"
+                            ? true
+                            : false
+                        }
+                      />
+                    </td>
+                    <td>
+                      <Dropdown
+                        styles={dropDownStyles}
+                        options={Ratingoptions}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Reviewee"
+                            ? true
+                            : false
+                        }
+                      />
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td colSpan={2}>Technical Skill Total</td>
+                    <td>0.00</td>
+                    <td> 0.00</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div className="" style={{ margin: "30px 0px" }}>
+                <div className={styles.commentbox}>
+                  <TextField
+                    multiline
+                    styles={boxTextField}
+                    label="Staff Comments"
+                    onChange={(e, val) => {
+                      onChange("TSstaffComments", val);
+                    }}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Primary Reviewer Comments:"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Reviewee"
+                        ? true
+                        : false
+                    }
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Additional Reviewer Comments:"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Reviewee"
+                        ? true
+                        : false
+                    }
+                  ></TextField>
+                </div>
+              </div>
+            </div>
+          </div> */}
+
+          <div className={styles.sectionContainer}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeader1}>
+                <div className={styles.colHeader100}>
+                  <span className={styles.subTitle}>
+                    Category3 - Technical Skills
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className={styles.sectionNotes}>
+              <p>
+                Reviewee should select the technical skills they expect to be
+                evaluated on in the drop down menu below.  Three to five skills
+                are optimal, but you can select up to seven.  It’s preferable
+                that you discuss your selections with your reviewer in advance. 
+                The final selection of technical skills is at the discretion of
+                the Reviewer who may change, remove, or add to the selections
+                and rate them individually. An overall rating is calculated by
+                the form but can be overridden by the Reviewer.
+              </p>
+            </div>
+            <div className={styles.sectionContent}>
+              {reviewFormData.isEdit == false && (
+                <div className={styles.addTechnicalSkill}>
+                  <div className={styles.col100}>
+                    <div className={styles.row}>
+                      <div className={styles.col100}>
+                        <label className={styles.boldlabel}>
+                          Add Technical Skill Rating:
+                        </label>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div className={styles.col50left}>
+                        <Dropdown
+                          placeholder="Select Technical Skill"
+                          options={ddData}
+                          // options={TSOptions.map((option) => ({
+                          //   ...option,
+                          //   disabled:
+                          //   option.key == reviewFormData.TechnicalSkillName,
+                          // }))}
+                          selectedKey={reviewFormData.TechnicalSkillName}
+                          onChange={(e, choice) => {
+                            onChange("TechnicalSkillName", choice.text);
+
+                            DropdownHide();
+                            //  TSOptions = TSOptions.forEach((option) => {
+                            //     if (option.key == choice.text) {
+                            //        option.disable = true;
+                            //     }
+
+                            //     // // ...option,
+                            //     // option["disable"] =
+                            //     //   option.key == choice.text ? true : false,
+                            //   });
+                            // let temp = ddData;
+                            // for (var i = 0; i < temp.length; i++) {
+                            //   if (temp[i].key == choice.text) {
+                            //     temp[i].disable = true;
+                            //   }
+                            // }
+
+                            // setddData([...temp]);
+                            // // console.log(ddData);
+                          }}
+                          disabled={
+                            reviewFormData.Status == "Awaiting Reviewee"
+                              ? false
+                              : true
+                          }
+                        />
+                      </div>
+
+                      {/* <div className={styles.col15left}>
+                        <Dropdown
+                          placeholder="Select Rating"
+                          options={Ratingoptions}
+                          onChange={(e, choice) => {
+                            onChange("TechnicalSkillRating", choice.text);
+                          }}
+                          disabled={
+                            reviewFormData.Status == "Awaiting Reviewee"
+                              ? false
+                              : true
+                          }
+                        />
+                      </div> */}
+
+                      {/* <div className={styles.col15left}>
+                        <Dropdown
+                          placeholder="Select Rating"
+                          options={Ratingoptions}
+                          onChange={(e, choice) => {
+                            onChange("TSRating1", choice.text);
+                          }}
+                          disabled={
+                            reviewFormData.Status == "Awaiting Reviewee"
+                              ? false
+                              : true
+                          }
+                        />
+                      </div> */}
+
+                      <div
+                        className={styles.col35left}
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: "20px",
+                        }}
+                      >
+                        <PrimaryButton
+                          text="Add"
+                          onClick={addTechnicalSkill}
+                          disabled={
+                            reviewFormData.TechnicalSkillName != ""
+                              ? false
+                              : true
+                          }
+                        />
+
+                        <PrimaryButton
+                          text="Edit Technical Skills"
+                          onClick={() => {
+                            reviewFormData.isEdit = true;
+                            reviewFormData.modifiedSelectedTechnicalName =
+                              reviewFormData.masterSelectedTechnicalName;
+                            setReviewFormData({ ...reviewFormData });
+                            DropdownHide();
+                          }}
+                          disabled={
+                            reviewFormData.Status == "Awaiting Acknowledgement"
+                              ? true
+                              : false
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {reviewFormData.isEdit && (
+                <div className={styles.addTechnicalSkill}>
+                  <div className={styles.row}>
+                    <div className={styles.col50left}></div>
+                    <div className={styles.col50right}>
+                      <PrimaryButton
+                        text="Save Changes"
+                        onClick={() => {
+                          AddTechnicalTotal(
+                            reviewFormData.masterSelectedTechnicalName
+                          );
+                          let _reviewFormData = { ...reviewFormData };
+                          _reviewFormData.isEdit = false;
+                          _reviewFormData.masterSelectedTechnicalName = [
+                            ...reviewFormData.modifiedSelectedTechnicalName,
+                          ];
+                          setReviewFormData({ ..._reviewFormData });
+                        }}
+                      />
+                      &nbsp;
+                      <DefaultButton
+                        text="Cancel Editing"
+                        onClick={() => {
+                          reviewFormData.isEdit = false;
+                          // reviewFormData.SelectedTechnicalName =
+                          //   reviewFormData.SelectedTechnicalName;
+                          setReviewFormData({ ...reviewFormData });
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <table className={styles.technicalskilltable}>
+                <thead>
+                  <tr>
+                    <th className={styles.colskill}>
+                      <Label className={styles.boldlabel}>
+                        Technical Skill Evaluated
+                      </Label>
+                    </th>
+                    <th className={styles.colrating}>
+                      <Label className={styles.boldlabel}>
+                        Primary Reviewer Rating
+                      </Label>
+                    </th>
+                    <th className={styles.colrating}>
+                      <Label className={styles.boldlabel}>
+                        Additional Reviewer Rating
+                      </Label>
+                    </th>
+                    {reviewFormData.Status == "Awaiting Reviewee" && (
+                      <th className={styles.colOperations}>&nbsp;</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {
+                    //Case: When there is no data
+                    reviewFormData.masterSelectedTechnicalName.length == 0 && (
+                      <tr>
+                        <td className={styles.colskill}>&nbsp;</td>
+                        <td className={styles.colTechSkillRating}>&nbsp;</td>
+                        <td className={styles.colTechSkillRating}>&nbsp;</td>
+
+                        <td className={styles.colOperations}>&nbsp;</td>
+                      </tr>
+                    )
+                  }
+                  {reviewFormData.isEdit == false &&
+                    reviewFormData.masterSelectedTechnicalName.length > 0 &&
+                    reviewFormData.masterSelectedTechnicalName.map(
+                      (data, index) => (
+                        <tr>
+                          <td className={styles.colskill}>
+                            <Label className={styles.normalLabel}>
+                              {data.TechinicalSkillName}
+                            </Label>
+                          </td>
+                          <td className={styles.colrating}>
+                            <Label className={styles.normalLabel}>
+                              {data.TechnicalSkillRating}
+                            </Label>
+                          </td>
+                          <td className={styles.colrating}>
+                            <Label className={styles.normalLabel}>
+                              {data.TSRating1}
+                            </Label>
+                          </td>
+
+                          {reviewFormData.Status == "Awaiting Reviewee" && (
+                            <td className={styles.colOperations}>
+                              <IconButton
+                                title="Delete"
+                                ariaLabel="Delete"
+                                iconProps={{ iconName: "Delete" }}
+                                onClick={() => deleteTechnicallSkillName(index)}
+                              />
+                            </td>
+                          )}
+                        </tr>
+                      )
+                    )}
+                  {reviewFormData.isEdit &&
+                    reviewFormData.masterSelectedTechnicalName.length > 0 &&
+                    reviewFormData.masterSelectedTechnicalName.map(
+                      (data, index) => (
+                        <tr>
+                          <td className={styles.colskillEdit}>
+                            {/* <div className={styles.row}> */}
+                            {/* <div className={styles.col75left}> */}
+                            <Dropdown
+                              placeholder="Select Technical Skill"
+                              options={TSOptions}
+                              selectedKey={data.TechinicalSkillName}
+                              onChange={(e, value) => {
+                                onChangeTechnicalName(
+                                  `modifiedSelectedTechnicalName`,
+                                  index,
+                                  value.key,
+                                  "TechinicalSkillName"
+                                );
+                                console.log(value);
+                              }}
+                              disabled={
+                                reviewFormData.Status == "Awaiting Reviewee"
+                                  ? true
+                                  : false
+                              }
+                            />
+                            {/* </div> */}
+                            {/* </div> */}
+                          </td>
+                          <td className={styles.colRatingEdit}>
+                            <Dropdown
+                              placeholder="Select Rating"
+                              options={Ratingoptions}
+                              selectedKey={data.TechnicalSkillRating}
+                              onChange={(e, value) => {
+                                onChangeTechnicalName(
+                                  `modifiedSelectedTechnicalName`,
+                                  index,
+                                  value.key,
+                                  "TechnicalSkillRating"
+                                );
+                              }}
+                              disabled={
+                                reviewFormData.Status ==
+                                "Awaiting Primary Reviewer"
+                                  ? false
+                                  : true
+                              }
+                            />
+                          </td>
+                          <td className={styles.colRatingEdit}>
+                            <Dropdown
+                              placeholder="Select Rating"
+                              options={Ratingoptions}
+                              selectedKey={data.TSRating1}
+                              onChange={(e, value) => {
+                                AddTechnicalTotal(
+                                  reviewFormData.masterSelectedTechnicalName
+                                );
+                                onChangeTechnicalName(
+                                  `modifiedSelectedTechnicalName`,
+                                  index,
+                                  value.key,
+                                  "TSRating1"
+                                );
+
+                                // console.log(value);
+                              }}
+                              disabled={
+                                reviewFormData.Status ==
+                                "Awaiting Additional Reviewer"
+                                  ? false
+                                  : true
+                              }
+                            />
+                          </td>
+                        </tr>
+                      )
+                    )}
+
+                  <tr>
+                    <td className={styles.colskill}>
+                      <Label className={styles.boldmargin15}>
+                        Calculated Overall Technical Skills Rating
+                      </Label>
+                    </td>
+                    <td className={styles.colrating} colSpan={1}>
+                      <Label className={styles.boldlabel}>
+                        {reviewFormData.CalculatedTsRating
+                          ? reviewFormData.CalculatedTsRating
+                          : 0}
+                      </Label>
+                    </td>
+                    <td className={styles.colrating} colSpan={1}>
+                      <Label className={styles.boldlabel}>
+                        {reviewFormData.CalculatedOverallTs2
+                          ? reviewFormData.CalculatedOverallTs2
+                          : 0}
+                      </Label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className={styles.colskill}>
+                      <Label className={styles.boldmargin15}>
+                        Overall Technical Skills Rating
+                      </Label>
+                    </td>
+                    <td className={styles.colrating} colSpan={1}>
+                      <Dropdown
+                        options={Ratingoptions}
+                        selectedKey={reviewFormData.OverallTSRating}
+                        onChange={(e, value) => {
+                          onChange("OverallTSRating", value.text);
+
+                          // console.log(value);
+                        }}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                      />
+                    </td>
+                    <td className={styles.colrating} colSpan={1}>
+                      <Dropdown
+                        options={Ratingoptions}
+                        selectedKey={reviewFormData.OverallTsRating2}
+                        onChange={(e, value) => {
+                          onChange("OverallTsRating2", value.text);
+
+                          // console.log(value);
+                        }}
+                        disabled={
+                          reviewFormData.Status ==
+                          "Awaiting Additional Reviewer"
+                            ? false
+                            : true
+                        }
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className={styles.row} hidden={true}>
+                <div className={styles.col100}>
+                  <Label>
+                    Reasons for Override of Calculated Rating (
+                    <i>
+                      If the overall rating differs by more than .5 from the
+                      calculated rating, an explanation for the variance must be
+                      provided in the box below
+                    </i>
+                    ):
+                  </Label>
+                  <TextField resizable={false} multiline={true}></TextField>
+                </div>
+              </div>
+              <div className={styles.AddPageBreak}></div>
+
+              <div className="" style={{ margin: "30px 0px" }}>
+                <div className={styles.commentbox}>
+                  <TextField
+                    multiline
+                    styles={boxTextField}
+                    label="Staff Comments"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Reviewee"
+                        ? false
+                        : true
+                    }
+                    onChange={(e, val) => {
+                      onChange("TSstaffComments", val);
+                    }}
+                    value={reviewFormData.TSstaffComments}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Primary Reviewer Comments:"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Primary Reviewer"
+                        ? false
+                        : true
+                    }
+                    value={reviewFormData.TechnicalSkillPRComments}
+                    onChange={(e, val) => {
+                      onChange("TechnicalSkillPRComments", val);
+                    }}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Additional Reviewer Comments:"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Additional Reviewer"
+                        ? false
+                        : true
+                    }
+                    value={reviewFormData.TechnicalSkillARComments}
+                    onChange={(e, val) => {
+                      onChange("TechnicalSkillARComments", val);
+                    }}
+                  ></TextField>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* section 6  B.Additional/Overall comments */}
+          <div className={styles.sectionContainer}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.colHeader100}>
+                <span className={styles.subTitle}>
+                  B.Additional/Overall comments
+                </span>
+              </div>
+            </div>
+            <div className={styles.sectionHeader1}>
+              <div className={styles.colHeader100}>
+                <span className={styles.subTitle}>
+                  {/* Category1 - Service Delivery */}
+                </span>
+              </div>
+            </div>
+            <div className={styles.sectionContent}>
+              {/* <div className={styles.innerTable}>
+            <div className={styles.box}>
+             
+              <TextField
+                multiline
+                styles={boxTextField}
+                label="Staff Comments"
+              ></TextField>
+            </div>
+            <div className={styles.box}>
+              <TextField
+                styles={boxTextField1}
+                multiline
+                label="Reviewer 1 Comments:"
+              ></TextField>
+
+              <TextField
+                styles={boxTextField1}
+                multiline
+                label="Reviewer 2 Comments:"
+              ></TextField>
+            </div>
+          </div> */}
+              {/* newdesign */}
+
+              <div className="" style={{ margin: "30px 0px" }}>
+                <div className={styles.commentbox}>
+                  <TextField
+                    multiline
+                    styles={boxTextField}
+                    label="Staff Comments"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Reviewee"
+                        ? false
+                        : true
+                    }
+                    onChange={(e, val) => {
+                      onChange("OverallstaffComments", val);
+                    }}
+                    value={reviewFormData.OverallstaffComments}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Primary Reviewer Comments:"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Primary Reviewer"
+                        ? false
+                        : true
+                    }
+                    value={reviewFormData.AdditionalPRComments}
+                    onChange={(e, val) => {
+                      onChange("AdditionalPRComments", val);
+                    }}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Additional Reviewer Comments:"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Additional Reviewer"
+                        ? false
+                        : true
+                    }
+                    value={reviewFormData.AdditionalARComments}
+                    onChange={(e, val) => {
+                      onChange("AdditionalARComments", val);
+                    }}
+                  ></TextField>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* section 7   C.Overall Annual Review Performance rating*/}
+          <div className={styles.sectionContainer}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.colHeader100}>
+                <span className={styles.subTitle}>
+                  C.Overall Annual Review Performance rating
+                </span>
+              </div>
+            </div>
+            <div className={styles.sectionHeader1}>
+              <div className={styles.colHeader100}>
+                <span className={styles.subTitle}>
+                  {/* Category1 - Service Delivery */}
+                </span>
+              </div>
+            </div>
+            <div className={styles.sectionContent}>
+              <table className={styles.OverallTable}>
+                <tbody>
+                  <tr>
+                    <td colSpan={4}>Calculated Overall Rating.</td>
+                  </tr>
+                  <tr>
+                    <td colSpan={1}>Primary Reviewer</td>
+                    <td colSpan={1}>
+                      {reviewFormData.OverallPRRating
+                        ? reviewFormData.OverallPRRating
+                        : 0}
+                    </td>
+                    <td colSpan={1}>Additional Reviewer</td>
+                    <td colSpan={1}>
+                      {reviewFormData.OverallARRating
+                        ? reviewFormData.OverallARRating
+                        : 0}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={2}>Awarded Overall Rating</td>
+                    <td colSpan={2}>
+                      <Dropdown
+                        options={Ratingoptions}
+                        selectedKey={reviewFormData.AwardOverallRating}
+                        onChange={(e, value) => {
+                          onChange("AwardOverallRating", value.text);
+
+                          // console.log(value);
+                        }}
+                        disabled={
+                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                            ? false
+                            : true
+                        }
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* section 8  D.Goals and Training/Development Opportunities*/}
+
+          <div className={styles.sectionContainer}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.colHeader100}>
+                <span className={styles.subTitle}>
+                  D. Goals & Training/Development Opportunities
+                </span>
+              </div>
+            </div>
+            <div className={styles.sectionHeader1}>
+              {/* <div className={styles.colHeader100}>
+            <span className={styles.subTitle}>
+             
+            </span>
+          </div> */}
+            </div>
+            <div className={styles.sectionContent}>
+              {/* new design */}
+
+              <div className="" style={{ margin: "30px 0px" }}>
+                <div className={styles.commentbox}>
+                  <TextField
+                    multiline
+                    styles={boxTextField}
+                    label="Staff Comments"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Reviewee"
+                        ? false
+                        : true
+                    }
+                    onChange={(e, val) => {
+                      onChange("GoalsstaffComments", val);
+                    }}
+                    value={reviewFormData.GoalsstaffComments}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Primary Reviewer Comments:"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Primary Reviewer"
+                        ? false
+                        : true
+                    }
+                    value={reviewFormData.GoalsPRComments}
+                    onChange={(e, val) => {
+                      onChange("GoalsPRComments", val);
+                    }}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Additional Reviewer Comments:"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Additional Reviewer"
+                        ? false
+                        : true
+                    }
+                    value={reviewFormData.GoalsARComments}
+                    onChange={(e, val) => {
+                      onChange("GoalsARComments", val);
+                    }}
+                  ></TextField>
+                </div>
+              </div>
+              {/* date with table */}
+
+              <div>
+                <table
+                  // className={styles.PerformingRatingScale}
+                  style={{
+                    width: "100%",
                   }}
-                  resolveDelay={1000}
-                />
-                <Label>Reviewer2</Label>
+                >
+                  <tbody>
+                    <tr>
+                      <td>Primary Reviewer Discussion Date</td>
+                      <td
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
+                        <DatePicker
+                          styles={Datepickerstyle}
+                          value={
+                            reviewFormData.GoalsPRDate
+                              ? new Date(reviewFormData.GoalsPRDate)
+                              : null
+                          }
+                          formatDate={() => {
+                            return moment(reviewFormData.GoalsPRDate).format(
+                              "MM/DD/YYYY"
+                            );
+                          }}
+                          disabled={
+                            reviewFormData.Status == "Awaiting Primary Reviewer"
+                              ? false
+                              : true
+                          }
+                          onSelectDate={(b) => {
+                            onChange("GoalsPRDate", b);
+                          }}
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Additional Reviewer Discussion Date</td>
+                      <td
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
+                        <DatePicker
+                          styles={Datepickerstyle}
+                          value={
+                            reviewFormData.GoalsARDate
+                              ? new Date(reviewFormData.GoalsARDate)
+                              : null
+                          }
+                          formatDate={() => {
+                            return moment(reviewFormData.GoalsARDate).format(
+                              "MM/DD/YYYY"
+                            );
+                          }}
+                          disabled={
+                            reviewFormData.Status ==
+                            "Awaiting Additional Reviewer"
+                              ? false
+                              : true
+                          }
+                          onSelectDate={(b) => {
+                            onChange("GoalsARDate", b);
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            </div>
-            <div className={styles.row}>
-              <div className={styles.col25Right}></div>
-              <div className={styles.col25left}></div>
-              <div className={styles.col25Right}></div>
-              <div className={styles.col25left}>
-                <DatePicker />
-                <Label>Date</Label>
+
+              {/* comment */}
+              <div className={styles.commentbox}>
+                <TextField
+                  styles={boxTextField1}
+                  multiline
+                  label="History"
+                  disabled={
+                    reviewFormData.Status == "Awaiting Acknowledgement"
+                      ? true
+                      : false
+                  }
+                  onChange={(e, val) => {
+                    onChange("GoalsHistory", val);
+                  }}
+                  value={reviewFormData.GoalsHistory}
+                ></TextField>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+
+          {/* buttons */}
+          <div className={styles.row}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "20px",
+                marginTop: "50px",
+              }}
+            >
+              {reviewFormData.Status == "Awaiting Acknowledgement" ? (
+                " "
+              ) : (
+                <PrimaryButton
+                  text="Save"
+                  onClick={() => {
+                    OnSubmitFunction("Save");
+                  }}
+                />
+              )}
+
+              <PrimaryButton
+                text="Cancel"
+                onClick={() => {
+                  // init();
+                  window.location.href =
+                    "https://itinfoalvarezandmarsal.sharepoint.com/sites/DEV-DIPERFORMGMT/Lists/NonBillableReviews/AllItems.aspx";
+                }}
+              />
+              {reviewFormData.Status == "Awaiting Acknowledgement" ||
+              reviewFormData.Status == "Awaiting Reviewee" ? (
+                ""
+              ) : (
+                <PrimaryButton
+                  text="Revert"
+                  onClick={() => {
+                    OnSubmitFunction("Revert");
+                  }}
+                />
+              )}
+
+              <PrimaryButton
+                text={
+                  reviewFormData.Status == "Awaiting Acknowledgement"
+                    ? "Acknowledge"
+                    : "Submit"
+                }
+                disabled={
+                  reviewFormData.isSubmitDisabled ||
+                  reviewFormData.Status == "Awaiting Acknowledgement"
+                    ? true
+                    : false
+                }
+                onClick={() => {
+                  OnSubmitFunction("Submit");
+                }}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 };

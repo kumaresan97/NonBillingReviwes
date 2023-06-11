@@ -352,7 +352,7 @@
   }
 
   .colskillEdit {
-    width: 85%;
+    width: 65%;
   }
   .colRatingEdit {
     width: 15%;
@@ -368,7 +368,8 @@
 .subTitle {
   @include ms-font-l;
   @include ms-fontColor-white;
-  font-weight: bold;
+  font-weight: 500;
+  // font-weight: bold;
 }
 
 .description {
@@ -467,11 +468,11 @@
             height: 50px;
           }
 
-          td,
-          th,
-          tr {
-            border: none;
-          }
+          // td,
+          // th,
+          // tr {
+          //   border: none;
+          // }
         }
       }
     }
@@ -500,6 +501,66 @@ textarea {
 
 .width250px {
   width: 250px;
+}
+
+// ReviewTable
+.ReviewTable {
+  tr {
+    width: 100%;
+    // position: absolute;
+    border: 2px solid red;
+    margin: 0px;
+  }
+  width: 100%;
+  // th,
+  // tr,
+  // td {
+  //   border: 1px solid #fff;
+  // }
+  tbody .Total {
+    border: 1px solid #000000;
+    margin: 10px;
+    td {
+      border: none;
+    }
+  }
+  .PrimaryReviewer,
+  .AdditionalReviewer {
+    width: 20%;
+  }
+  .Metric {
+    width: 50%;
+  }
+  .sNo {
+    width: 8%;
+  }
+  td,
+  th {
+    padding: 5px;
+
+    text-align: left;
+  }
+
+  td {
+    font-weight: normal;
+  }
+}
+
+.commentbox {
+  width: 100%;
+}
+.OverallTable {
+  width: 100%;
+  border: 1px solid #000;
+  border-collapse: collapse;
+  tr,
+  th,
+  td {
+    border: 1px solid #000;
+  }
+  td {
+    padding: 10px;
+  }
 }
 
 // table {
@@ -559,10 +620,15 @@ textarea {
   border: 1px solid #000;
   border-collapse: collapse;
 
+  td {
+    border: 1px solid #000;
+    border-collapse: collapse;
+  }
+
   .Firsrtd {
     width: 10%;
     text-align: center;
-    border: 1px solid #000;
+    // border: 1px solid #000;
     padding: 5px;
   }
   .Secondtd {
@@ -570,6 +636,6 @@ textarea {
     padding-left: 4px;
     font-weight: 600;
     padding: 5px;
-    border: 1px solid #000;
+    // border: 1px solid #000;
   }
 }
