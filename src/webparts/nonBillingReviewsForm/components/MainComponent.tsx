@@ -20,14 +20,19 @@ import {
   PrimaryButton,
   Stack,
   TextField,
+  Persona,
+  PersonaSize,
 } from "@fluentui/react";
 import { log } from "@pnp/pnpjs";
 import TechnicalSkill from "./TechnicalSkill";
 import { locales } from "moment";
+import { get } from "@microsoft/sp-lodash-subset";
 
 interface IForm {
   Status: string;
   staffName: number;
+  StaffEmail: string;
+  StaffTitle: string;
   title: string;
   sbu: string;
   reviewer1: number;
@@ -35,7 +40,9 @@ interface IForm {
   reviewer1Level: string;
   reviewer2: number;
   reviewer2Email: string;
+  reviewer1Title: string;
   reviewer2Level: string;
+  reviewer2Title: string;
   isValid: boolean;
   SDstaffComments: string;
   TLstaffComments: string;
@@ -113,6 +120,9 @@ interface IForm {
   CalculatedOverallTs2: number;
   GoalsHistory: string;
   AwardOverallRating: string;
+  Submitted: number;
+  ReverComments: string;
+  AwaitingAknowledgeComments: string;
 }
 
 interface ITechnicalName {
@@ -126,10 +136,13 @@ interface IChoice {
   disabled: boolean;
 }
 let TSOptions: IChoice[] = [];
+
 const MainComponent = (props) => {
   let revData: IForm = {
     Status: "",
     staffName: null,
+    StaffEmail: "",
+    StaffTitle: "",
     title: "",
     sbu: "",
     reviewer1: null,
@@ -137,6 +150,8 @@ const MainComponent = (props) => {
     reviewer1Level: "",
     reviewer2: null,
     reviewer2Email: "",
+    reviewer1Title: "",
+    reviewer2Title: "",
     reviewer2Level: "",
     isValid: false,
     SDstaffComments: "",
@@ -206,16 +221,21 @@ const MainComponent = (props) => {
     OverallTsRating2: "",
     GoalsHistory: "",
     AwardOverallRating: "",
+    Submitted: null,
+    ReverComments: "",
+    AwaitingAknowledgeComments: "",
   };
   const [currentUser, setCurrentUser] = useState({
     id: null,
     email: "",
+    Title: "",
   });
   const [ddData, setddData] = useState([]);
 
   const [reviewFormData, setReviewFormData] = useState<IForm>(revData);
   const [isReviewIDAvail, setIsReviewIDAvail] = useState(false);
   const [currentuserId, setCurrentUserId] = useState(0);
+
   const jobTitleOptions: IDropdownOption[] = [
     { key: "Managing Director", text: "Managing Director" },
     { key: "Senior Director", text: "Senior Director" },
@@ -338,32 +358,32 @@ const MainComponent = (props) => {
       _reviewFormData.reviewer2 != null &&
       _reviewFormData.reviewer2Level != "";
 
-    if (reviewFormData.Status == "Awaiting Reviewee") {
-      _reviewFormData.isSubmitDisabled =
-        _reviewFormData.SDstaffComments == "" ||
-        _reviewFormData.GoalsstaffComments == "" ||
-        _reviewFormData.OverallstaffComments == "" ||
-        _reviewFormData.TLstaffComments == "" ||
-        _reviewFormData.TSstaffComments == "";
-    }
+    // if (reviewFormData.Status == "Awaiting Reviewee") {
+    //   _reviewFormData.isSubmitDisabled =
+    //     _reviewFormData.SDstaffComments == "" ||
+    //     _reviewFormData.GoalsstaffComments == "" ||
+    //     _reviewFormData.OverallstaffComments == "" ||
+    //     _reviewFormData.TLstaffComments == "" ||
+    //     _reviewFormData.TSstaffComments == "";
+    // }
 
-    if (reviewFormData.Status == "Awaiting Primary Reviewer") {
-      _reviewFormData.isSubmitDisabled =
-        _reviewFormData.C1PRComments == "" ||
-        _reviewFormData.C2PRComments == "" ||
-        _reviewFormData.TechnicalSkillPRComments == "" ||
-        _reviewFormData.AdditionalPRComments == "" ||
-        _reviewFormData.GoalsPRComments == "";
-    }
+    // if (reviewFormData.Status == "Preliminary/Additional Reviewer") {
+    //   _reviewFormData.isSubmitDisabled =
+    //     _reviewFormData.C1PRComments == "" ||
+    //     _reviewFormData.C2PRComments == "" ||
+    //     _reviewFormData.TechnicalSkillPRComments == "" ||
+    //     _reviewFormData.AdditionalPRComments == "" ||
+    //     _reviewFormData.GoalsPRComments == "";
+    // }
 
-    if (reviewFormData.Status == "Awaiting Additional Reviewer") {
-      _reviewFormData.isSubmitDisabled =
-        _reviewFormData.C1ARComments == "" ||
-        _reviewFormData.C2ARComments == "" ||
-        _reviewFormData.TechnicalSkillARComments == "" ||
-        _reviewFormData.AdditionalARComments == "" ||
-        _reviewFormData.GoalsARComments == "";
-    }
+    // if (reviewFormData.Status == "Final Reviewer") {
+    //   _reviewFormData.isSubmitDisabled =
+    //     _reviewFormData.C1ARComments == "" ||
+    //     _reviewFormData.C2ARComments == "" ||
+    //     _reviewFormData.TechnicalSkillARComments == "" ||
+    //     _reviewFormData.AdditionalARComments == "" ||
+    //     _reviewFormData.GoalsARComments == "";
+    // }
 
     _reviewFormData.isSubmitDisabled =
       submitButtonDisableHandler(_reviewFormData);
@@ -514,7 +534,7 @@ const MainComponent = (props) => {
       .items.get()
       .then((i) => {
         i.forEach((x) => {
-          if (x.Category == "Technical Skill") {
+          if (x.Category == "NonBillable - Technical Skills") {
             TSOptions.push({
               key: x.Title,
               text: x.Title,
@@ -523,6 +543,9 @@ const MainComponent = (props) => {
           }
         });
         // console.log(TSOptions);
+
+        TSOptions.sort((a: any, b: any) => a.text.localeCompare(b.text));
+
         setddData([...TSOptions]);
       })
       .catch((err) => console.log(err));
@@ -556,8 +579,10 @@ const MainComponent = (props) => {
       .then((e) => {
         let data = reviewFormData;
         if (e) {
+          console.log(e);
+
           data.staffName = e.Id;
-          setCurrentUser({ id: e.Id, email: e.Email });
+          setCurrentUser({ id: e.Id, email: e.Email, Title: e.Title });
           setReviewFormData({ ...data });
         }
         //get currentid user detail
@@ -570,14 +595,23 @@ const MainComponent = (props) => {
             props.sp.web.lists
               .getByTitle("Non Billable Reviews")
               .items.getById(geturl())
-              .select("*,Reviewer1Name/EMail,Reviewer2Name/EMail")
-              .expand("Reviewer1Name,Reviewer2Name")
+              .select(
+                "*,Reviewer1Name/EMail,Reviewer1Name/Title,Reviewer2Name/EMail,Reviewer2Name/Title,Staff_x0020_Name/EMail,Staff_x0020_Name/Title"
+              )
+              .expand("Reviewer1Name,Reviewer2Name,Staff_x0020_Name")
               .get()
               .then((item) => {
-                console.log(item);
+                // console.log(item);
 
                 let statusReviewer: IForm = { ...reviewFormData };
                 statusReviewer.Status = item.Status ? item.Status : null;
+                statusReviewer.StaffEmail = geturl()
+                  ? item.Staff_x0020_Name.EMail
+                  : currentUser.email;
+                statusReviewer.StaffTitle = geturl()
+                  ? item.Staff_x0020_Name.Title
+                  : currentUser.Title;
+
                 statusReviewer.staffName = item.Staff_x0020_NameId
                   ? item.Staff_x0020_NameId
                   : null;
@@ -588,6 +622,12 @@ const MainComponent = (props) => {
                 statusReviewer.reviewer1 = item.Reviewer1NameId
                   ? item.Reviewer1NameId
                   : null;
+                statusReviewer.reviewer2Title = item.Reviewer2Name
+                  ? item.Reviewer2Name.Title
+                  : "";
+                statusReviewer.reviewer1Title = item.Reviewer1Name
+                  ? item.Reviewer1Name.Title
+                  : "";
                 statusReviewer.reviewer1Email = item.Reviewer1NameId
                   ? item.Reviewer1Name.EMail
                   : "";
@@ -711,10 +751,20 @@ const MainComponent = (props) => {
                   : 0;
                 statusReviewer.isSubmitDisabled =
                   submitButtonDisableHandler(statusReviewer);
-                statusReviewer.GoalsHistory = item.History ? item.History : "";
+                statusReviewer.GoalsHistory = item.Acknowledgement_x0020_History
+                  ? item.Acknowledgement_x0020_History
+                  : "";
                 statusReviewer.AwardOverallRating = item.AwardOverallRating
                   ? item.AwardOverallRating
                   : "";
+                statusReviewer.ReverComments =
+                  item.Revert_x0020_Review_x0020_Commen
+                    ? item.Revert_x0020_Review_x0020_Commen
+                    : "";
+                statusReviewer.AwaitingAknowledgeComments =
+                  item.AwaitingAknowledgeComments
+                    ? item.AwaitingAknowledgeComments
+                    : "";
                 console.log(statusReviewer, "statusReviewer");
 
                 setReviewFormData({ ...statusReviewer });
@@ -731,6 +781,8 @@ const MainComponent = (props) => {
       .getByTitle("Non Billable Reviews")
       .items.add({
         Status: "Awaiting Reviewee",
+        Title: currentUser.Title,
+        Submitted: 99,
         Staff_x0020_NameId: currentUser.id,
         Staff_x0020_Job_x0020_Title: reviewFormData.title,
         SBU: reviewFormData.sbu,
@@ -757,34 +809,47 @@ const MainComponent = (props) => {
   // });
 
   // onsubmit when user click submit button
-  const OnSubmitFunction = (action: string) => {
+  const OnSubmitFunction = async (action: string) => {
+    debugger;
     if (action == "Submit") {
       if (reviewFormData.Status == "Awaiting Reviewee") {
-        reviewFormData.Status = "Awaiting Primary Reviewer";
+        reviewFormData.Status = "Preliminary/Additional Reviewer";
+        reviewFormData.Submitted = 2;
         setReviewFormData({ ...reviewFormData });
-      } else if (reviewFormData.Status == "Awaiting Primary Reviewer") {
-        reviewFormData.Status = "Awaiting Additional Reviewer";
+      } else if (reviewFormData.Status == "Preliminary/Additional Reviewer") {
+        reviewFormData.Status = "Final Reviewer";
+        reviewFormData.Submitted = 4;
         setReviewFormData({ ...reviewFormData });
-      } else if (reviewFormData.Status == "Awaiting Additional Reviewer") {
+      } else if (reviewFormData.Status == "Final Reviewer") {
         reviewFormData.Status = "Awaiting Acknowledgement";
+        reviewFormData.Submitted = 6;
         setReviewFormData({ ...reviewFormData });
       }
     } else if (action == "Revert") {
       if (reviewFormData.Status == "Awaiting Acknowledgement") {
-        reviewFormData.Status = "Awaiting Additional Reviewer";
+        reviewFormData.Status = "Final Reviewer";
         setReviewFormData({ ...reviewFormData });
-      } else if (reviewFormData.Status == "Awaiting Additional Reviewer") {
-        reviewFormData.Status = "Awaiting Primary Reviewer";
+      } else if (reviewFormData.Status == "Final Reviewer") {
+        reviewFormData.Status = "Preliminary/Additional Reviewer";
+        reviewFormData.Submitted = 5;
         setReviewFormData({ ...reviewFormData });
-      } else if (reviewFormData.Status == "Awaiting Primary Reviewer") {
+      } else if (reviewFormData.Status == "Preliminary/Additional Reviewer") {
         reviewFormData.Status = "Awaiting Reviewee";
+        reviewFormData.Submitted = 3;
+        setReviewFormData({ ...reviewFormData });
+      }
+    } else if (action == "Acknowledged") {
+      if (reviewFormData.Status == "Awaiting Acknowledgement") {
+        reviewFormData.Status = "Acknowledged";
+        reviewFormData.Submitted = 7;
         setReviewFormData({ ...reviewFormData });
       }
     }
-    props.sp.web.lists
+    await props.sp.web.lists
       .getByTitle("Non Billable Reviews")
       .items.getById(geturl())
       .update({
+        Submitted: reviewFormData.Submitted ? reviewFormData.Submitted : null,
         Status: reviewFormData.Status,
         SCStaffComments: reviewFormData.SDstaffComments,
         TLStaffComments: reviewFormData.TLstaffComments,
@@ -849,8 +914,12 @@ const MainComponent = (props) => {
         OverallTsRating2: reviewFormData.OverallTsRating2,
         Calculated_x0020_Technical_x0020: reviewFormData.CalculatedTsRating,
         CalculatedOverallTs2: reviewFormData.CalculatedOverallTs2,
-        History: reviewFormData.GoalsHistory,
+        Acknowledgement_x0020_History: reviewFormData.GoalsHistory,
         AwardOverallRating: reviewFormData.AwardOverallRating,
+        Revert_x0020_Review_x0020_Commen: reviewFormData.ReverComments,
+        AwaitingAknowledgeComments: reviewFormData.AwaitingAknowledgeComments
+          ? reviewFormData.AwaitingAknowledgeComments
+          : "",
       })
       .then((i) => {
         window.location.href = getSharepointurl();
@@ -965,7 +1034,7 @@ const MainComponent = (props) => {
 
     console.log(reviewFormData.masterSelectedTechnicalName);
   };
-
+  //delete technical skill
   const deleteTechnicallSkillName = (index) => {
     console.log(index);
 
@@ -987,7 +1056,7 @@ const MainComponent = (props) => {
       );
     }
 
-    if (_reviewFormData.Status == "Awaiting Primary Reviewer") {
+    if (_reviewFormData.Status == "Preliminary/Additional Reviewer") {
       return (
         _reviewFormData.C1PRComments == "" ||
         _reviewFormData.C2PRComments == "" ||
@@ -997,7 +1066,7 @@ const MainComponent = (props) => {
       );
     }
 
-    if (_reviewFormData.Status == "Awaiting Additional Reviewer") {
+    if (_reviewFormData.Status == "Final Reviewer") {
       return (
         _reviewFormData.C1ARComments == "" ||
         _reviewFormData.C2ARComments == "" ||
@@ -1013,6 +1082,7 @@ const MainComponent = (props) => {
   React.useEffect(() => {
     getCurrentUser();
     // init();
+    // DropdownHide();
     TechnicalskillOptions();
   }, []);
 
@@ -1032,22 +1102,53 @@ const MainComponent = (props) => {
               <Label>Staff Name:</Label>
             </div>
             <div className={styles.col25left}>
-              <PeoplePicker
-                context={props.context}
-                personSelectionLimit={1}
-                groupName={""}
-                showtooltip={true}
-                // required={true}
-                disabled={true}
-                ensureUser={true}
-                showHiddenInUI={false}
-                defaultSelectedUsers={[currentUser.email]}
-                principalTypes={[PrincipalType.User]}
-                resolveDelay={1000}
-                // selectedItems={(e: any) => {
-                //   onChange("staffName", e.length > 0 ? e[0].id : null);
-                // }}
-              />
+              {
+                // if status = empty || Review Item ID = ""
+
+                reviewFormData.Status == "" ? (
+                  <PeoplePicker
+                    context={props.context}
+                    personSelectionLimit={1}
+                    groupName={""}
+                    showtooltip={true}
+                    // required={true}
+                    disabled={true}
+                    ensureUser={true}
+                    showHiddenInUI={false}
+                    defaultSelectedUsers={
+                      [
+                        reviewFormData.Status == ""
+                          ? currentUser.email
+                          : reviewFormData.StaffEmail,
+                      ]
+                      // geturl() != null
+                      //   ? [reviewFormData.StaffEmail]
+                      //   : [currentUser.email]
+                    }
+                    principalTypes={[PrincipalType.User]}
+                    resolveDelay={1000}
+                    // selectedItems={(e: any) => {
+                    //   onChange("staffName", e.length > 0 ? e[0].id : null);
+                    // }}
+                  />
+                ) : (
+                  <Persona
+                    size={PersonaSize.size32}
+                    text={
+                      reviewFormData.Status != ""
+                        ? reviewFormData.StaffTitle
+                        : currentUser.Title
+                    }
+                    imageUrl={
+                      reviewFormData.Status != ""
+                        ? "/_layouts/15/userphoto.aspx?size=S&username=" +
+                          reviewFormData.StaffEmail
+                        : "/_layouts/15/userphoto.aspx?size=S&username=" +
+                          currentUser.email
+                    }
+                  />
+                )
+              }
             </div>
             <div className={styles.col25Right}>
               <Label> Title:</Label>
@@ -1104,29 +1205,45 @@ const MainComponent = (props) => {
 
           <div className={styles.row}>
             <div className={styles.col25Right}>
-              <Label> Primary Reviewer</Label>
+              <Label> Preliminary/Additional Reviewer:</Label>
             </div>
             <div className={styles.col25left}>
-              <PeoplePicker
-                context={props.context}
-                personSelectionLimit={1}
-                groupName={""} // Leave this blank in case you want to filter from all users
-                showtooltip={true}
-                // required={true}
-                ensureUser={true}
-                // showHiddenInUI={false}
-                showHiddenInUI={true}
-                disabled={isReviewIDAvail}
-                principalTypes={[PrincipalType.User]}
-                defaultSelectedUsers={[reviewFormData.reviewer1Email]}
-                resolveDelay={1000}
-                selectedItems={(e: any) => {
-                  onChange("reviewer1", e.length > 0 ? e[0].id : null);
-                }}
-              />
+              {
+                // if status = empty || Review Item ID = ""
+
+                reviewFormData.Status == "" ? (
+                  <PeoplePicker
+                    context={props.context}
+                    personSelectionLimit={1}
+                    groupName={""} // Leave this blank in case you want to filter from all users
+                    showtooltip={true}
+                    // required={true}
+                    ensureUser={true}
+                    // showHiddenInUI={false}
+                    showHiddenInUI={true}
+                    disabled={isReviewIDAvail}
+                    principalTypes={[PrincipalType.User]}
+                    defaultSelectedUsers={[reviewFormData.reviewer1Email]}
+                    resolveDelay={1000}
+                    selectedItems={(e: any) => {
+                      onChange("reviewer1", e.length > 0 ? e[0].id : null);
+                      // onChange("reviewer1Title", e.length > 0 ? e[0].text : "");
+                    }}
+                  />
+                ) : (
+                  <Persona
+                    size={PersonaSize.size32}
+                    text={reviewFormData.reviewer1Title}
+                    imageUrl={
+                      "/_layouts/15/userphoto.aspx?size=S&username=" +
+                      reviewFormData.reviewer1Email
+                    }
+                  />
+                )
+              }
             </div>
             <div className={styles.col25Right}>
-              <Label>Primary Reviewer Level:</Label>
+              <Label>Preliminary/Additional Reviewer Level:</Label>
             </div>
             <div className={styles.col25left}>
               <Dropdown
@@ -1142,31 +1259,42 @@ const MainComponent = (props) => {
           </div>
           <div className={styles.row}>
             <div className={styles.col25Right}>
-              <Label>Additional Reviewer</Label>
+              <Label>Final Reviewer:</Label>
             </div>
             <div className={styles.col25left}>
-              <PeoplePicker
-                context={props.context}
-                personSelectionLimit={1}
-                groupName={""} // Leave this blank in case you want to filter from all users
-                showtooltip={true}
-                // required={true}
-                ensureUser={true}
-                showHiddenInUI={false}
-                disabled={isReviewIDAvail}
-                principalTypes={[PrincipalType.User]}
-                // defaultSelectedUsers={[
-                //   this.state.ReviewDetails.BasicDetails.Reviewer.Email,
-                // ]}
-                defaultSelectedUsers={[reviewFormData.reviewer2Email]}
-                selectedItems={(e: any) => {
-                  onChange("reviewer2", e.length > 0 ? e[0].id : null);
-                }}
-                resolveDelay={1000}
-              />
+              {reviewFormData.Status == "" ? (
+                <PeoplePicker
+                  context={props.context}
+                  personSelectionLimit={1}
+                  groupName={""} // Leave this blank in case you want to filter from all users
+                  showtooltip={true}
+                  // required={true}
+                  ensureUser={true}
+                  showHiddenInUI={false}
+                  disabled={isReviewIDAvail}
+                  principalTypes={[PrincipalType.User]}
+                  // defaultSelectedUsers={[
+                  //   this.state.ReviewDetails.BasicDetails.Reviewer.Email,
+                  // ]}
+                  defaultSelectedUsers={[reviewFormData.reviewer2Email]}
+                  selectedItems={(e: any) => {
+                    onChange("reviewer2", e.length > 0 ? e[0].id : null);
+                  }}
+                  resolveDelay={1000}
+                />
+              ) : (
+                <Persona
+                  size={PersonaSize.size32}
+                  text={reviewFormData.reviewer2Title}
+                  imageUrl={
+                    "/_layouts/15/userphoto.aspx?size=S&username=" +
+                    reviewFormData.reviewer2Email
+                  }
+                />
+              )}
             </div>
             <div className={styles.col25Right}>
-              <Label>Additional Reviewer Level:</Label>
+              <Label>Final Reviewer Level:</Label>
             </div>
             <div className={styles.col25left}>
               <Dropdown
@@ -1210,7 +1338,7 @@ const MainComponent = (props) => {
             <div className={styles.row}>
               <div className={styles.col100right}>
                 <Label className={styles.reviewStatus}>
-                  Review Status:{reviewFormData.Status}
+                  Review Status : {reviewFormData.Status}
                 </Label>
               </div>
             </div>
@@ -1267,7 +1395,7 @@ const MainComponent = (props) => {
             <div className={styles.sectionHeader1}>
               <div className={styles.colHeader100}>
                 <span className={styles.subTitle}>
-                  Category1 - Service Delivery
+                  Category 1 - Service Delivery
                 </span>
               </div>
             </div>
@@ -1277,9 +1405,11 @@ const MainComponent = (props) => {
                   <tr>
                     <th className={styles.sNo}> </th>
                     <th className={styles.Metric}>Metric</th>
-                    <th className={styles.PrimaryReviewer}>Primary Reviewer</th>
+                    <th className={styles.PrimaryReviewer}>
+                      Preliminary/Additional Reviewer
+                    </th>
                     <th className={styles.AdditionalReviewer}>
-                      Additional Reviewer
+                      Final Reviewer
                     </th>
                   </tr>
                 </thead>
@@ -1292,7 +1422,8 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
                             ? false
                             : true
                         }
@@ -1307,8 +1438,7 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status ==
-                          "Awaiting Additional Reviewer"
+                          reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -1328,7 +1458,8 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
                             ? false
                             : true
                         }
@@ -1343,8 +1474,7 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status ==
-                          "Awaiting Additional Reviewer"
+                          reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -1363,7 +1493,8 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
                             ? false
                             : true
                         }
@@ -1378,8 +1509,7 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status ==
-                          "Awaiting Additional Reviewer"
+                          reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -1398,7 +1528,8 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
                             ? false
                             : true
                         }
@@ -1413,8 +1544,7 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status ==
-                          "Awaiting Additional Reviewer"
+                          reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -1433,7 +1563,8 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
                             ? false
                             : true
                         }
@@ -1448,8 +1579,7 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status ==
-                          "Awaiting Additional Reviewer"
+                          reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -1468,7 +1598,8 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
                             ? false
                             : true
                         }
@@ -1483,8 +1614,7 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status ==
-                          "Awaiting Additional Reviewer"
+                          reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -1555,9 +1685,9 @@ const MainComponent = (props) => {
                   <TextField
                     styles={boxTextField1}
                     multiline
-                    label="Primary Reviewer Comments:"
+                    label="Preliminary/Additional Reviewer Comments"
                     disabled={
-                      reviewFormData.Status == "Awaiting Primary Reviewer"
+                      reviewFormData.Status == "Preliminary/Additional Reviewer"
                         ? false
                         : true
                     }
@@ -1571,11 +1701,9 @@ const MainComponent = (props) => {
                   <TextField
                     styles={boxTextField1}
                     multiline
-                    label="Additional Reviewer Comments:"
+                    label="Final Reviewer Comments"
                     disabled={
-                      reviewFormData.Status == "Awaiting Additional Reviewer"
-                        ? false
-                        : true
+                      reviewFormData.Status == "Final Reviewer" ? false : true
                     }
                     value={reviewFormData.C1ARComments}
                     onChange={(e, val) => {
@@ -1593,7 +1721,7 @@ const MainComponent = (props) => {
             <div className={styles.sectionHeader1}>
               <div className={styles.colHeader100}>
                 <span className={styles.subTitle}>
-                  Category2 - Teamwork and Leadership
+                  Category 2 - Teamwork and Leadership
                 </span>
               </div>
             </div>
@@ -1604,9 +1732,12 @@ const MainComponent = (props) => {
                   <tr>
                     <th className={styles.sNo}> </th>
                     <th className={styles.Metric}>Metric</th>
-                    <th className={styles.PrimaryReviewer}>Primary Reviewer</th>
+                    <th className={styles.PrimaryReviewer}>
+                      {" "}
+                      Preliminary/Additional Reviewer
+                    </th>
                     <th className={styles.AdditionalReviewer}>
-                      Additional Reviewer
+                      Final Reviewer
                     </th>
                   </tr>
                 </thead>
@@ -1619,7 +1750,8 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
                             ? false
                             : true
                         }
@@ -1634,8 +1766,7 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status ==
-                          "Awaiting Additional Reviewer"
+                          reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -1655,7 +1786,8 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
                             ? false
                             : true
                         }
@@ -1670,8 +1802,7 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status ==
-                          "Awaiting Additional Reviewer"
+                          reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -1690,7 +1821,8 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
                             ? false
                             : true
                         }
@@ -1705,8 +1837,7 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status ==
-                          "Awaiting Additional Reviewer"
+                          reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -1725,7 +1856,8 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
                             ? false
                             : true
                         }
@@ -1740,8 +1872,7 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status ==
-                          "Awaiting Additional Reviewer"
+                          reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -1760,7 +1891,8 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
                             ? false
                             : true
                         }
@@ -1775,8 +1907,7 @@ const MainComponent = (props) => {
                         styles={dropDownStyles}
                         options={Ratingoptions}
                         disabled={
-                          reviewFormData.Status ==
-                          "Awaiting Additional Reviewer"
+                          reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -1788,7 +1919,7 @@ const MainComponent = (props) => {
                     </td>
                   </tr>
 
-                  <tr>
+                  <tr className={styles.Total}>
                     <td
                       style={{
                         fontSize: "16px",
@@ -1848,9 +1979,9 @@ const MainComponent = (props) => {
                   <TextField
                     styles={boxTextField1}
                     multiline
-                    label="Primary Reviewer Comments:"
+                    label="Preliminary/Additional Reviewer Comments"
                     disabled={
-                      reviewFormData.Status == "Awaiting Primary Reviewer"
+                      reviewFormData.Status == "Preliminary/Additional Reviewer"
                         ? false
                         : true
                     }
@@ -1864,11 +1995,9 @@ const MainComponent = (props) => {
                   <TextField
                     styles={boxTextField1}
                     multiline
-                    label="Additional Reviewer Comments:"
+                    label="Final Reviewer Comments"
                     disabled={
-                      reviewFormData.Status == "Awaiting Additional Reviewer"
-                        ? false
-                        : true
+                      reviewFormData.Status == "Final Reviewer" ? false : true
                     }
                     value={reviewFormData.C2ARComments}
                     onChange={(e, val) => {
@@ -2035,7 +2164,8 @@ const MainComponent = (props) => {
                   <TextField
                     styles={boxTextField1}
                     multiline
-                    label="Primary Reviewer Comments:"
+                    label="Preliminary/Additional ReviewerComments
+:"
                     disabled={
                       reviewFormData.Status == "Awaiting Reviewee"
                         ? true
@@ -2064,7 +2194,7 @@ const MainComponent = (props) => {
               <div className={styles.sectionHeader1}>
                 <div className={styles.colHeader100}>
                   <span className={styles.subTitle}>
-                    Category3 - Technical Skills
+                    Category 3 - Technical Skills
                   </span>
                 </div>
               </div>
@@ -2088,7 +2218,7 @@ const MainComponent = (props) => {
                     <div className={styles.row}>
                       <div className={styles.col100}>
                         <label className={styles.boldlabel}>
-                          Add Technical Skill Rating:
+                          Add Technical Skill Rating
                         </label>
                       </div>
                     </div>
@@ -2135,6 +2265,11 @@ const MainComponent = (props) => {
                           }}
                           disabled={
                             reviewFormData.Status == "Awaiting Reviewee"
+                              ? false
+                              : reviewFormData.Status ==
+                                "Preliminary/Additional Reviewer"
+                              ? false
+                              : reviewFormData.Status == "Final Reviewer"
                               ? false
                               : true
                           }
@@ -2193,14 +2328,20 @@ const MainComponent = (props) => {
                         <PrimaryButton
                           text="Edit Technical Skills"
                           onClick={() => {
+                            DropdownHide();
                             reviewFormData.isEdit = true;
                             reviewFormData.modifiedSelectedTechnicalName =
                               reviewFormData.masterSelectedTechnicalName;
                             setReviewFormData({ ...reviewFormData });
-                            DropdownHide();
                           }}
                           disabled={
                             reviewFormData.Status == "Awaiting Acknowledgement"
+                              ? true
+                              : reviewFormData.Status == "Acknowledged"
+                              ? true
+                              : reviewFormData.Status == ""
+                              ? true
+                              : reviewFormData.Status == "Awaiting Reviewee"
                               ? true
                               : false
                           }
@@ -2255,12 +2396,12 @@ const MainComponent = (props) => {
                     </th>
                     <th className={styles.colrating}>
                       <Label className={styles.boldlabel}>
-                        Primary Reviewer Rating
+                        Preliminary/Additional Reviewer Rating
                       </Label>
                     </th>
                     <th className={styles.colrating}>
                       <Label className={styles.boldlabel}>
-                        Additional Reviewer Rating
+                        Final Reviewer Rating
                       </Label>
                     </th>
                     {reviewFormData.Status == "Awaiting Reviewee" && (
@@ -2360,7 +2501,7 @@ const MainComponent = (props) => {
                               }}
                               disabled={
                                 reviewFormData.Status ==
-                                "Awaiting Primary Reviewer"
+                                "Preliminary/Additional Reviewer"
                                   ? false
                                   : true
                               }
@@ -2385,8 +2526,7 @@ const MainComponent = (props) => {
                                 // console.log(value);
                               }}
                               disabled={
-                                reviewFormData.Status ==
-                                "Awaiting Additional Reviewer"
+                                reviewFormData.Status == "Final Reviewer"
                                   ? false
                                   : true
                               }
@@ -2433,7 +2573,8 @@ const MainComponent = (props) => {
                           // console.log(value);
                         }}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
                             ? false
                             : true
                         }
@@ -2449,8 +2590,7 @@ const MainComponent = (props) => {
                           // console.log(value);
                         }}
                         disabled={
-                          reviewFormData.Status ==
-                          "Awaiting Additional Reviewer"
+                          reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -2497,9 +2637,9 @@ const MainComponent = (props) => {
                   <TextField
                     styles={boxTextField1}
                     multiline
-                    label="Primary Reviewer Comments:"
+                    label="Preliminary/Additional Reviewer Comments"
                     disabled={
-                      reviewFormData.Status == "Awaiting Primary Reviewer"
+                      reviewFormData.Status == "Preliminary/Additional Reviewer"
                         ? false
                         : true
                     }
@@ -2513,11 +2653,9 @@ const MainComponent = (props) => {
                   <TextField
                     styles={boxTextField1}
                     multiline
-                    label="Additional Reviewer Comments:"
+                    label="Final Reviewer Comments"
                     disabled={
-                      reviewFormData.Status == "Awaiting Additional Reviewer"
-                        ? false
-                        : true
+                      reviewFormData.Status == "Final Reviewer" ? false : true
                     }
                     value={reviewFormData.TechnicalSkillARComments}
                     onChange={(e, val) => {
@@ -2528,13 +2666,85 @@ const MainComponent = (props) => {
               </div>
             </div>
           </div>
+          {/* neworder to */}
+
+          <div className={styles.sectionContainer}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.colHeader100}>
+                <span className={styles.subTitle}>
+                  B. Goals & Training/Development Opportunities
+                </span>
+              </div>
+            </div>
+            <div className={styles.sectionHeader1}>
+              {/* <div className={styles.colHeader100}>
+            <span className={styles.subTitle}>
+             
+            </span>
+            </div> */}
+            </div>
+            <div className={styles.sectionContent}>
+              {/* new design */}
+
+              <div className="" style={{ margin: "30px 0px" }}>
+                <div className={styles.commentbox}>
+                  <TextField
+                    multiline
+                    styles={boxTextField}
+                    label="Staff Comments"
+                    disabled={
+                      reviewFormData.Status == "Awaiting Reviewee"
+                        ? false
+                        : true
+                    }
+                    onChange={(e, val) => {
+                      onChange("GoalsstaffComments", val);
+                    }}
+                    value={reviewFormData.GoalsstaffComments}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Preliminary/Additional Reviewer Comments"
+                    disabled={
+                      reviewFormData.Status == "Preliminary/Additional Reviewer"
+                        ? false
+                        : true
+                    }
+                    value={reviewFormData.GoalsPRComments}
+                    onChange={(e, val) => {
+                      onChange("GoalsPRComments", val);
+                    }}
+                  ></TextField>
+                </div>
+                <div className={styles.commentbox}>
+                  <TextField
+                    styles={boxTextField1}
+                    multiline
+                    label="Final Reviewer Comments"
+                    disabled={
+                      reviewFormData.Status == "Final Reviewer" ? false : true
+                    }
+                    value={reviewFormData.GoalsARComments}
+                    onChange={(e, val) => {
+                      onChange("GoalsARComments", val);
+                    }}
+                  ></TextField>
+                </div>
+              </div>
+              {/* date with table */}
+            </div>
+          </div>
 
           {/* section 6  B.Additional/Overall comments */}
           <div className={styles.sectionContainer}>
             <div className={styles.sectionHeader}>
               <div className={styles.colHeader100}>
                 <span className={styles.subTitle}>
-                  B.Additional/Overall comments
+                  {/* B.Additional/Overall comments */}
+                  C.Additional/Overall comments
                 </span>
               </div>
             </div>
@@ -2592,9 +2802,9 @@ const MainComponent = (props) => {
                   <TextField
                     styles={boxTextField1}
                     multiline
-                    label="Primary Reviewer Comments:"
+                    label="Preliminary/Additional Reviewer Comments"
                     disabled={
-                      reviewFormData.Status == "Awaiting Primary Reviewer"
+                      reviewFormData.Status == "Preliminary/Additional Reviewer"
                         ? false
                         : true
                     }
@@ -2608,11 +2818,9 @@ const MainComponent = (props) => {
                   <TextField
                     styles={boxTextField1}
                     multiline
-                    label="Additional Reviewer Comments:"
+                    label="Final Reviewer Comments"
                     disabled={
-                      reviewFormData.Status == "Awaiting Additional Reviewer"
-                        ? false
-                        : true
+                      reviewFormData.Status == "Final Reviewer" ? false : true
                     }
                     value={reviewFormData.AdditionalARComments}
                     onChange={(e, val) => {
@@ -2629,7 +2837,7 @@ const MainComponent = (props) => {
             <div className={styles.sectionHeader}>
               <div className={styles.colHeader100}>
                 <span className={styles.subTitle}>
-                  C.Overall Annual Review Performance rating
+                  D.Overall Annual Review Performance rating
                 </span>
               </div>
             </div>
@@ -2644,16 +2852,16 @@ const MainComponent = (props) => {
               <table className={styles.OverallTable}>
                 <tbody>
                   <tr>
-                    <td colSpan={4}>Calculated Overall Rating.</td>
+                    <td colSpan={4}>Calculated Overall Rating</td>
                   </tr>
                   <tr>
-                    <td colSpan={1}>Primary Reviewer</td>
+                    <td colSpan={1}> Preliminary/Additional Reviewer</td>
                     <td colSpan={1}>
                       {reviewFormData.OverallPRRating
                         ? reviewFormData.OverallPRRating
                         : 0}
                     </td>
-                    <td colSpan={1}>Additional Reviewer</td>
+                    <td colSpan={1}>Final Reviewer</td>
                     <td colSpan={1}>
                       {reviewFormData.OverallARRating
                         ? reviewFormData.OverallARRating
@@ -2672,7 +2880,13 @@ const MainComponent = (props) => {
                           // console.log(value);
                         }}
                         disabled={
-                          reviewFormData.Status == "Awaiting Primary Reviewer"
+                          // reviewFormData.Status == "Awaiting Reviewee"
+                          //   ? false
+                          //   :
+                          reviewFormData.Status ==
+                          "Preliminary/Additional Reviewer"
+                            ? false
+                            : reviewFormData.Status == "Final Reviewer"
                             ? false
                             : true
                         }
@@ -2684,173 +2898,143 @@ const MainComponent = (props) => {
             </div>
           </div>
 
-          {/* section 8  D.Goals and Training/Development Opportunities*/}
+          {/* section 8  D.Goals and Training/Development Opportunities* this is moved to top/}
 
-          <div className={styles.sectionContainer}>
-            <div className={styles.sectionHeader}>
-              <div className={styles.colHeader100}>
-                <span className={styles.subTitle}>
-                  D. Goals & Training/Development Opportunities
-                </span>
-              </div>
-            </div>
-            <div className={styles.sectionHeader1}>
-              {/* <div className={styles.colHeader100}>
-            <span className={styles.subTitle}>
-             
-            </span>
-          </div> */}
-            </div>
-            <div className={styles.sectionContent}>
-              {/* new design */}
-
-              <div className="" style={{ margin: "30px 0px" }}>
-                <div className={styles.commentbox}>
-                  <TextField
-                    multiline
-                    styles={boxTextField}
-                    label="Staff Comments"
-                    disabled={
-                      reviewFormData.Status == "Awaiting Reviewee"
-                        ? false
-                        : true
-                    }
-                    onChange={(e, val) => {
-                      onChange("GoalsstaffComments", val);
+          {/* newchanges today */}
+          <div>
+            <table
+              // className={styles.PerformingRatingScale}
+              style={{
+                width: "100%",
+              }}
+            >
+              <tbody>
+                <tr>
+                  <td> Preliminary/Additional Reviewer Discussion Date</td>
+                  <td
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
                     }}
-                    value={reviewFormData.GoalsstaffComments}
-                  ></TextField>
-                </div>
-                <div className={styles.commentbox}>
-                  <TextField
-                    styles={boxTextField1}
-                    multiline
-                    label="Primary Reviewer Comments:"
-                    disabled={
-                      reviewFormData.Status == "Awaiting Primary Reviewer"
-                        ? false
-                        : true
-                    }
-                    value={reviewFormData.GoalsPRComments}
-                    onChange={(e, val) => {
-                      onChange("GoalsPRComments", val);
+                  >
+                    <DatePicker
+                      styles={Datepickerstyle}
+                      value={
+                        reviewFormData.GoalsPRDate
+                          ? new Date(reviewFormData.GoalsPRDate)
+                          : null
+                      }
+                      formatDate={() => {
+                        return moment(reviewFormData.GoalsPRDate).format(
+                          "MM/DD/YYYY"
+                        );
+                      }}
+                      disabled={
+                        reviewFormData.Status ==
+                        "Preliminary/Additional Reviewer"
+                          ? false
+                          : true
+                      }
+                      onSelectDate={(b) => {
+                        onChange("GoalsPRDate", b);
+                      }}
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td>Final Reviewer Discussion Date</td>
+                  <td
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
                     }}
-                  ></TextField>
-                </div>
-                <div className={styles.commentbox}>
-                  <TextField
-                    styles={boxTextField1}
-                    multiline
-                    label="Additional Reviewer Comments:"
-                    disabled={
-                      reviewFormData.Status == "Awaiting Additional Reviewer"
-                        ? false
-                        : true
-                    }
-                    value={reviewFormData.GoalsARComments}
-                    onChange={(e, val) => {
-                      onChange("GoalsARComments", val);
-                    }}
-                  ></TextField>
-                </div>
-              </div>
-              {/* date with table */}
+                  >
+                    <DatePicker
+                      styles={Datepickerstyle}
+                      value={
+                        reviewFormData.GoalsARDate
+                          ? new Date(reviewFormData.GoalsARDate)
+                          : null
+                      }
+                      formatDate={() => {
+                        return moment(reviewFormData.GoalsARDate).format(
+                          "MM/DD/YYYY"
+                        );
+                      }}
+                      disabled={
+                        reviewFormData.Status == "Final Reviewer" ? false : true
+                      }
+                      onSelectDate={(b) => {
+                        onChange("GoalsARDate", b);
+                      }}
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-              <div>
-                <table
-                  // className={styles.PerformingRatingScale}
-                  style={{
-                    width: "100%",
-                  }}
-                >
-                  <tbody>
-                    <tr>
-                      <td>Primary Reviewer Discussion Date</td>
-                      <td
-                        style={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                        }}
-                      >
-                        <DatePicker
-                          styles={Datepickerstyle}
-                          value={
-                            reviewFormData.GoalsPRDate
-                              ? new Date(reviewFormData.GoalsPRDate)
-                              : null
-                          }
-                          formatDate={() => {
-                            return moment(reviewFormData.GoalsPRDate).format(
-                              "MM/DD/YYYY"
-                            );
-                          }}
-                          disabled={
-                            reviewFormData.Status == "Awaiting Primary Reviewer"
-                              ? false
-                              : true
-                          }
-                          onSelectDate={(b) => {
-                            onChange("GoalsPRDate", b);
-                          }}
-                        />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Additional Reviewer Discussion Date</td>
-                      <td
-                        style={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                        }}
-                      >
-                        <DatePicker
-                          styles={Datepickerstyle}
-                          value={
-                            reviewFormData.GoalsARDate
-                              ? new Date(reviewFormData.GoalsARDate)
-                              : null
-                          }
-                          formatDate={() => {
-                            return moment(reviewFormData.GoalsARDate).format(
-                              "MM/DD/YYYY"
-                            );
-                          }}
-                          disabled={
-                            reviewFormData.Status ==
-                            "Awaiting Additional Reviewer"
-                              ? false
-                              : true
-                          }
-                          onSelectDate={(b) => {
-                            onChange("GoalsARDate", b);
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+          {/* revert comments */}
 
-              {/* comment */}
-              <div className={styles.commentbox}>
-                <TextField
-                  styles={boxTextField1}
-                  multiline
-                  label="History"
-                  disabled={
-                    reviewFormData.Status == "Awaiting Acknowledgement"
-                      ? true
-                      : false
-                  }
-                  onChange={(e, val) => {
-                    onChange("GoalsHistory", val);
-                  }}
-                  value={reviewFormData.GoalsHistory}
-                ></TextField>
-              </div>
+          <div className={styles.commentbox}>
+            <TextField
+              styles={boxTextField1}
+              multiline
+              label="Revert Review Comments"
+              // disabled={
+              //   reviewFormData.Status == "Awaiting Additional Reviewer"
+              //     ? false
+              //     : true
+              // }
+              disabled={
+                reviewFormData.Status == "Final Reviewer"
+                  ? false
+                  : reviewFormData.Status == "Preliminary/Additional Reviewer"
+                  ? false
+                  : true
+              }
+              value={reviewFormData.ReverComments}
+              onChange={(e, val) => {
+                onChange("ReverComments", val);
+              }}
+            ></TextField>
+          </div>
+
+          {/* awaiting Acknowledged comments */}
+
+          {reviewFormData.Status == "Awaiting Acknowledgement" && (
+            <div className={styles.commentbox}>
+              <TextField
+                styles={boxTextField}
+                multiline
+                label="Acknowledgement Comments"
+                onChange={(e, val) => {
+                  onChange("AwaitingAknowledgeComments", val);
+                }}
+                value={reviewFormData.AwaitingAknowledgeComments}
+              ></TextField>
             </div>
+          )}
+
+          {/* comment */}
+          <div className={styles.commentbox}>
+            <TextField
+              styles={boxTextField}
+              multiline
+              label="History"
+              readOnly
+              disabled={
+                reviewFormData.Status == "Awaiting Acknowledgement"
+                  ? true
+                  : false
+              }
+              onChange={(e, val) => {
+                onChange("GoalsHistory", val);
+              }}
+              value={reviewFormData.GoalsHistory}
+            ></TextField>
           </div>
 
           {/* buttons */}
@@ -2863,7 +3047,9 @@ const MainComponent = (props) => {
                 marginTop: "50px",
               }}
             >
-              {reviewFormData.Status == "Awaiting Acknowledgement" ? (
+              {reviewFormData.Status == "Awaiting Acknowledgement" ||
+              reviewFormData.Status == "Acknowledged" ||
+              reviewFormData.Status == "" ? (
                 " "
               ) : (
                 <PrimaryButton
@@ -2883,7 +3069,9 @@ const MainComponent = (props) => {
                 }}
               />
               {reviewFormData.Status == "Awaiting Acknowledgement" ||
-              reviewFormData.Status == "Awaiting Reviewee" ? (
+              reviewFormData.Status == "Awaiting Reviewee" ||
+              reviewFormData.Status == "Acknowledged" ||
+              reviewFormData.Status == "" ? (
                 ""
               ) : (
                 <PrimaryButton
@@ -2897,17 +3085,20 @@ const MainComponent = (props) => {
               <PrimaryButton
                 text={
                   reviewFormData.Status == "Awaiting Acknowledgement"
-                    ? "Acknowledge"
+                    ? "Acknowledged"
+                    : reviewFormData.Status == "Acknowledged"
+                    ? "Acknowledged"
                     : "Submit"
                 }
                 disabled={
-                  reviewFormData.isSubmitDisabled ||
-                  reviewFormData.Status == "Awaiting Acknowledgement"
+                  reviewFormData.isSubmitDisabled || reviewFormData.Status == ""
                     ? true
                     : false
                 }
                 onClick={() => {
-                  OnSubmitFunction("Submit");
+                  reviewFormData.Status == "Awaiting Acknowledgement"
+                    ? OnSubmitFunction("Acknowledged")
+                    : OnSubmitFunction("Submit");
                 }}
               />
             </div>

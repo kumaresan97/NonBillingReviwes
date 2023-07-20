@@ -431,7 +431,7 @@
   }
   .sectionHeader1 {
     @include ms-Grid-row;
-    background-color: lightblue !important;
+    background-color: #005a9ea8 !important;
     // padding: 5px;
     // font-weight: bold;
     margin: 0px !important;
@@ -518,6 +518,7 @@ textarea {
   //   border: 1px solid #fff;
   // }
   tbody .Total {
+    background-color: #ddd;
     border: 1px solid #000000;
     margin: 10px;
     td {
